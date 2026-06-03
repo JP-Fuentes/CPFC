@@ -172,7 +172,7 @@
                 <span class="text-[11px] md:text-sm font-bold">Analytics</span>
             </button>
             <button onclick="switchTab('settings')" class="nav-btn flex flex-col md:flex-row items-center gap-1 md:gap-4 p-2 md:p-3.5 rounded-xl w-full md:justify-start" data-target="settings">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
                 <span class="text-[11px] md:text-sm font-bold">Config</span>
             </button>
         </div>
@@ -581,6 +581,10 @@
         /* ========================
            STATE & CONFIGURATION
            ======================== */
+        
+        // 👇 PASTE YOUR GOOGLE APPS SCRIPT WEB APP URL BELOW 👇
+        const DEFAULT_GAS_URL = "https://script.google.com/macros/s/AKfycbzOEWz3Ajdjzu85nD0NBMYq6yJZTOwTFh3rTl85ojZlzwXoOTJyremy9yKZ7mKHGGT8/exec";
+
         let state = {
             today: { cal: 0, pro: 0, fat: 0, carb: 0, water: 0 },
             goals: { cal: 2500, pro: 150, fat: 80, carb: 200 },
@@ -758,6 +762,35 @@
             document.getElementById('stage-grams').value = 100;
             
             calculateStaged();
+        }
+
+        function stageCustom(name) {
+            selectedBaseFood = null;
+            document.getElementById('search-dropdown').classList.add('hidden');
+            document.getElementById('food-search').value = '';
+            
+            document.getElementById('stage-name').value = name;
+            document.getElementById('stage-grams').value = 100;
+            
+            calculateStaged();
+        }
+
+        function smartAutoFill() {
+            const input = document.getElementById('stage-name').value.toLowerCase();
+            
+            if (input.length < 3) {
+                selectedBaseFood = null;
+                return;
+            }
+
+            const match = usdaDB.find(food => food.name.toLowerCase().includes(input));
+            
+            if (match) {
+                selectedBaseFood = match;
+                calculateStaged();
+            } else {
+                selectedBaseFood = null;
+            }
         }
 
         function clearBaseFood() {
@@ -1109,7 +1142,14 @@
                 document.getElementById('goal-carb').value = state.goals.carb;
             }
 
-            if(localStorage.getItem('gasUrl')) document.getElementById('gas-url').value = localStorage.getItem('gasUrl');
+            // Apply default GAS URL if it's set in the code and local storage is empty
+            if(localStorage.getItem('gasUrl')) {
+                document.getElementById('gas-url').value = localStorage.getItem('gasUrl');
+            } else if (DEFAULT_GAS_URL && DEFAULT_GAS_URL !== "PASTE_YOUR_WEB_APP_URL_HERE") {
+                document.getElementById('gas-url').value = DEFAULT_GAS_URL;
+                localStorage.setItem('gasUrl', DEFAULT_GAS_URL);
+            }
+
             if(localStorage.getItem('usdaApiKey')) document.getElementById('usda-key').value = localStorage.getItem('usdaApiKey');
             if(localStorage.getItem('shiftStart')) document.getElementById('shift-start').value = localStorage.getItem('shiftStart');
             document.getElementById('goal-toggle').checked = !state.isFlexible;
