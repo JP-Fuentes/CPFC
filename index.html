@@ -374,16 +374,23 @@
                                 <span class="text-[9px] uppercase font-bold text-green-400 bg-green-500/10 px-2 py-1 rounded border border-green-500/20 tracking-wider">Live & AI</span>
                             </div>
                             
-                            <div class="relative group">
-                                <div class="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
-                                    <svg class="h-5 w-5 text-zinc-500 group-focus-within:text-indigo-400 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                            <div class="flex flex-col sm:flex-row gap-3 relative group">
+                                <div class="relative w-full">
+                                    <div class="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
+                                        <svg class="h-5 w-5 text-zinc-500 group-focus-within:text-indigo-400 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                                    </div>
+                                    <input type="text" id="food-search" oninput="handleSearch()" class="w-full pl-12 pr-4 py-4 rounded-xl text-base font-medium placeholder-zinc-600 border-white/10 focus:border-indigo-500 bg-black/50 shadow-inner transition-colors" placeholder="Search USDA DB or type local PH food...">
+                                    
+                                    <!-- Dropdown Results -->
+                                    <div id="search-dropdown" class="search-results absolute w-full mt-3 bg-gray-900/95 backdrop-blur-3xl border border-indigo-500/40 rounded-xl shadow-[0_20px_50px_-10px_rgba(0,0,0,0.8)] z-[200] hidden overflow-hidden">
+                                        <!-- Populated by JS API Call -->
+                                    </div>
                                 </div>
-                                <input type="text" id="food-search" oninput="handleSearch()" class="w-full pl-12 pr-4 py-4 rounded-xl text-base font-medium placeholder-zinc-600 border-white/10 focus:border-indigo-500 bg-black/50 shadow-inner transition-colors" placeholder="Search USDA DB or type local PH food...">
                                 
-                                <!-- Dropdown Results -->
-                                <div id="search-dropdown" class="search-results absolute w-full mt-3 bg-gray-900/95 backdrop-blur-3xl border border-indigo-500/40 rounded-xl shadow-[0_20px_50px_-10px_rgba(0,0,0,0.8)] z-[200] hidden overflow-hidden">
-                                    <!-- Populated by JS API Call -->
-                                </div>
+                                <!-- Permanent AI Button -->
+                                <button onclick="forceAISearch()" class="sm:w-auto w-full px-6 py-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-sm font-black transition-all flex justify-center items-center gap-2 shadow-[0_0_15px_rgba(79,70,229,0.4)] shrink-0 z-[200]">
+                                    🤖 AI Auto-Fill
+                                </button>
                             </div>
                         </div>
 
@@ -766,28 +773,27 @@
                 }
             }
 
-            // 3. Always append the AI button at the bottom!
             if (!foundResults) {
-                searchHtml += `<div class="p-4 text-center text-sm text-zinc-400 font-medium border-b border-white/5">No strict match found in US database.</div>`;
+                searchHtml += `<div class="p-4 text-center text-sm text-zinc-400 font-medium">No strict match found in US database. Use the AI Auto-Fill button!</div>`;
             }
 
-            searchHtml += `
-                <div class="p-3 bg-indigo-900/20 border-t border-indigo-500/30">
-                    ${geminiKey ? `
-                    <button onclick="aiEstimateFood('${query}')" class="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition-all flex justify-center items-center gap-2 shadow-md">
-                        🤖 Search/Estimate "${query}" with AI
-                    </button>` : `
-                    <p class="text-xs text-red-400 font-bold text-center">Add Gemini API key in Config to unlock AI estimation.</p>`}
-                </div>
-            `;
-
             dropdown.innerHTML = searchHtml;
+        }
+
+        function forceAISearch() {
+            const query = document.getElementById('food-search').value.trim();
+            if(!query) return showModal("Empty Search", "Please type a food name first to use AI Auto-Fill.");
+            const geminiKey = localStorage.getItem('geminiApiKey');
+            if(!geminiKey) return showModal("API Key Required", "Please enter your Gemini API Key in the Config tab.");
+            
+            aiEstimateFood(query);
         }
 
         async function aiEstimateFood(foodQuery) {
             const apiKey = localStorage.getItem('geminiApiKey');
             const dropdown = document.getElementById('search-dropdown');
             dropdown.innerHTML = `<div class="p-5 text-sm font-bold text-indigo-400 text-center animate-pulse">🤖 Estimating macros for ${foodQuery}...</div>`;
+            dropdown.classList.remove('hidden');
             
             // Explicit instruction to handle specific brands and local foods exactly like MFP
             const prompt = `You are an expert nutrition database equivalent to MyFitnessPal. I need the nutritional value for 100g of the specific food or brand: "${foodQuery}". 
