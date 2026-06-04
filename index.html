@@ -10,10 +10,10 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="C.P.F.C.">
     
-    <title>C.P.F.C. Tracker System</title>
+    <title>C.P.F.C. Tracker System (AI Edition)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- Dynamic PWA Manifest Injection (The missing piece) -->
+    <!-- Dynamic PWA Manifest Injection -->
     <script>
         const manifestJSON = {
             "name": "C.P.F.C. Tracker System",
@@ -94,7 +94,6 @@
             background: inherit; filter: blur(8px); opacity: 0.75; z-index: -1;
         }
 
-        /* Intense Gradient Fills */
         .fill-cal { background: linear-gradient(90deg, #818cf8, #38bdf8); }
         .fill-pro { background: linear-gradient(90deg, #3b82f6, #60a5fa); }
         .fill-fat { background: linear-gradient(90deg, #f59e0b, #fcd34d); }
@@ -122,7 +121,6 @@
         ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 10px; }
         ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.25); }
         
-        /* Dropdown specific fixes */
         .search-results { max-height: 280px; overflow-y: auto; }
 
         /* Nav states */
@@ -134,6 +132,13 @@
         .main-content { flex: 1; overflow-y: auto; overflow-x: hidden; position: relative; }
         
         .font-brand { font-family: 'Outfit', sans-serif; }
+
+        /* Toast Animation */
+        @keyframes slideUpFade {
+            from { opacity: 0; transform: translateY(20px) translateX(-50%); }
+            to { opacity: 1; transform: translateY(0) translateX(-50%); }
+        }
+        .toast-enter { animation: slideUpFade 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
     </style>
 </head>
 <body class="app-shell flex-col md:flex-row">
@@ -167,6 +172,10 @@
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
                 <span class="text-[11px] md:text-sm font-bold">Log Meal</span>
             </button>
+            <button onclick="switchTab('coach')" class="nav-btn flex flex-col md:flex-row items-center gap-1 md:gap-4 p-2 md:p-3.5 rounded-xl w-full md:justify-start" data-target="coach">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg>
+                <span class="text-[11px] md:text-sm font-bold">AI Coach</span>
+            </button>
             <button onclick="switchTab('analytics')" class="nav-btn flex flex-col md:flex-row items-center gap-1 md:gap-4 p-2 md:p-3.5 rounded-xl w-full md:justify-start" data-target="analytics">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
                 <span class="text-[11px] md:text-sm font-bold">Analytics</span>
@@ -182,7 +191,7 @@
     <div class="main-content pb-24 md:pb-0">
 
         <!-- Header with Live Time & Sync Status -->
-        <header class="sticky top-0 z-[500] bg-[#030712]/90 backdrop-blur-2xl border-b border-white/10 px-6 py-5 flex justify-between items-center shadow-sm">
+        <header class="sticky top-0 z-[400] bg-[#030712]/90 backdrop-blur-2xl border-b border-white/10 px-6 py-5 flex justify-between items-center shadow-sm">
             <h2 id="page-title" class="text-xl font-bold text-white tracking-tight font-brand">Dashboard</h2>
             
             <div class="flex items-center gap-4 text-right">
@@ -335,20 +344,20 @@
                     <div class="relative z-10">
                         <div class="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm text-zinc-300 font-medium">
                             <div class="bg-black/30 p-4 rounded-xl border border-white/5">
-                                <span class="block text-indigo-400 font-bold mb-1">1. Find or Custom Entry (Left Panel)</span>
-                                Use the <strong>"Database Search"</strong> box to fetch data from the live USDA API. If you have no internet, it will use offline mock data.
+                                <span class="block text-indigo-400 font-bold mb-1">1. Smart Search (Live API + AI)</span>
+                                Search the <strong>live USDA DB</strong> for basic foods. If you search for local PH foods and it's not found, click the <strong>🤖 AI Estimate</strong> button for instant macro counting!
                             </div>
                             <div class="bg-black/30 p-4 rounded-xl border border-white/5">
                                 <span class="block text-blue-400 font-bold mb-1">2. Add to Builder</span>
-                                Verify the Grams inside the <strong>"Item Details"</strong> box. Then click the blue <strong class="text-white">"Add Custom Row"</strong> button to push that row into the <strong>"Meal Builder"</strong> panel on the right.
+                                Verify the Grams inside the <strong>"Item Details"</strong> box. Then click the blue <strong class="text-white">"Add Row To Builder"</strong> button to push that row into your meal panel.
                             </div>
                             <div class="bg-black/30 p-4 rounded-xl border border-white/5">
-                                <span class="block text-purple-400 font-bold mb-1">3. Save as Recipe (Top Right)</span>
-                                Added all your rows? Click the <strong class="text-white">"Save Recipe"</strong> button at the <strong class="underline">top right</strong> of the Meal Builder panel. Next time, just click it under "Quick Add Recipes" (bottom left) to load it instantly!
+                                <span class="block text-purple-400 font-bold mb-1">3. Save as Recipe</span>
+                                Click the <strong class="text-white">"Save Recipe"</strong> button at the <strong class="underline">top right</strong> of the Meal Builder panel to save for later. Load them via "Quick Add Recipes".
                             </div>
                             <div class="bg-black/30 p-4 rounded-xl border border-white/5">
-                                <span class="block text-green-400 font-bold mb-1">4. Log to System (Bottom Right)</span>
-                                Once your meal is ready, click the massive white <strong class="text-white">"Log Meal to System"</strong> button at the <strong class="underline">bottom right</strong> to log the data and sync it to Google Sheets!
+                                <span class="block text-green-400 font-bold mb-1">4. Log to System (With Undo)</span>
+                                Click the massive white <strong class="text-white">"Log Meal to System"</strong> button at the bottom right. A Toast will appear giving you 5 seconds to UNDO the action!
                             </div>
                         </div>
                     </div>
@@ -359,18 +368,18 @@
                     <!-- Left Column: Search & Manual Entry Area -->
                     <div class="space-y-8 lg:col-span-5 flex flex-col h-auto">
                         
-                        <!-- LIVE USDA API SEARCH BLOCK -->
+                        <!-- LIVE API SEARCH BLOCK -->
                         <div class="card p-8 relative z-[100]">
                             <div class="flex justify-between items-center mb-6">
                                 <h2 class="text-sm font-black text-white/50 uppercase tracking-[0.2em]">Database Search</h2>
-                                <span class="text-[9px] uppercase font-bold text-green-400 bg-green-500/10 px-2 py-1 rounded border border-green-500/20 tracking-wider">Live API</span>
+                                <span class="text-[9px] uppercase font-bold text-green-400 bg-green-500/10 px-2 py-1 rounded border border-green-500/20 tracking-wider">Live & AI</span>
                             </div>
                             
                             <div class="relative group">
                                 <div class="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
                                     <svg class="h-5 w-5 text-zinc-500 group-focus-within:text-indigo-400 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                                 </div>
-                                <input type="text" id="food-search" oninput="handleSearch()" class="w-full pl-12 pr-4 py-4 rounded-xl text-base font-medium placeholder-zinc-600 border-white/10 focus:border-indigo-500 bg-black/50 shadow-inner transition-colors" placeholder="Search USDA Database...">
+                                <input type="text" id="food-search" oninput="handleSearch()" class="w-full pl-12 pr-4 py-4 rounded-xl text-base font-medium placeholder-zinc-600 border-white/10 focus:border-indigo-500 bg-black/50 shadow-inner transition-colors" placeholder="Search USDA DB or type local PH food...">
                                 
                                 <!-- Dropdown Results -->
                                 <div id="search-dropdown" class="search-results absolute w-full mt-3 bg-gray-900/95 backdrop-blur-3xl border border-indigo-500/40 rounded-xl shadow-[0_20px_50px_-10px_rgba(0,0,0,0.8)] z-[200] hidden overflow-hidden">
@@ -433,7 +442,7 @@
                         <div class="absolute -top-32 -left-32 w-80 h-80 bg-purple-600/10 rounded-full blur-[100px] pointer-events-none"></div>
 
                         <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6 relative z-10 shrink-0">
-                            <h2 class="text-sm font-black text-white/50 uppercase tracking-[0.2em]">Meal Builder</h2>
+                            <h2 class="text-sm font-black text-white/50 uppercase tracking-[0.2em]">Meal Builder (Draft Auto-Saved)</h2>
                             <button onclick="saveAsRecipe()" class="text-[10px] uppercase tracking-widest px-4 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 text-white font-bold rounded-lg transition-colors flex items-center gap-2 shadow-md">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
                                 Save Recipe
@@ -459,9 +468,41 @@
                                 </div>
                             </div>
 
-                            <button onclick="submitMealLog()" class="w-full py-4 bg-white text-black active:scale-[0.98] transition-all rounded-xl text-base font-black shadow-[0_0_25px_rgba(255,255,255,0.15)] hover:shadow-[0_0_35px_rgba(255,255,255,0.3)] hover:bg-zinc-100 flex justify-center items-center gap-2">
+                            <button onclick="triggerSubmitWithUndo()" class="w-full py-4 bg-white text-black active:scale-[0.98] transition-all rounded-xl text-base font-black shadow-[0_0_25px_rgba(255,255,255,0.15)] hover:shadow-[0_0_35px_rgba(255,255,255,0.3)] hover:bg-zinc-100 flex justify-center items-center gap-2">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
                                 Log Meal to System
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- AI COACH TAB -->
+            <section id="tab-coach" class="hidden animate-fade-in h-[75vh]">
+                <div class="card p-0 flex flex-col h-full relative overflow-hidden">
+                    <div class="p-5 border-b border-white/10 flex items-center gap-4 bg-indigo-900/20 shrink-0">
+                        <div class="w-10 h-10 rounded-full bg-gradient-to-r from-purple-500 to-indigo-500 flex items-center justify-center text-white">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg>
+                        </div>
+                        <div>
+                            <h2 class="text-base font-black text-white">Gemini Nutrition Coach</h2>
+                            <p class="text-[11px] text-indigo-300">Your personal diet assistant.</p>
+                        </div>
+                    </div>
+                    
+                    <div id="chat-box" class="flex-1 overflow-y-auto p-6 space-y-4 scroll-smooth">
+                        <div class="flex justify-start">
+                            <div class="bg-indigo-900/40 text-indigo-100 p-4 rounded-2xl rounded-tl-sm max-w-[85%] text-sm leading-relaxed border border-indigo-500/20">
+                                Hello! I'm your AI Coach. I know your daily targets. Need meal suggestions, macro breakdowns, or workout tips?
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="p-4 border-t border-white/10 bg-black/40 shrink-0">
+                        <div class="flex gap-3">
+                            <input type="text" id="chat-input" class="flex-1 bg-black/60 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:border-indigo-500" placeholder="Ask about macros, meals, or fitness..." onkeypress="if(event.key === 'Enter') sendChatMessage()">
+                            <button onclick="sendChatMessage()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-5 rounded-xl font-bold transition-colors">
+                                Send
                             </button>
                         </div>
                     </div>
@@ -472,7 +513,6 @@
             <section id="tab-analytics" class="hidden max-w-5xl animate-fade-in">
                 <div class="card p-8">
                     <h2 class="text-sm font-black text-white/50 uppercase tracking-[0.2em] mb-10">7-Day Caloric Adherence</h2>
-                    
                     <div class="h-72 flex items-end justify-between gap-3 mb-6 px-2" id="weekly-chart">
                         <!-- Bars populated by JS -->
                     </div>
@@ -524,15 +564,20 @@
                         
                         <div class="space-y-8 bg-black/30 p-6 rounded-2xl border border-white/5">
                             <div>
-                                <label class="block text-sm font-bold text-white mb-2">GAS Backend URL</label>
-                                <input type="url" id="gas-url" class="w-full p-4 rounded-xl text-sm font-medium bg-black/50 border border-white/10 focus:border-indigo-500" placeholder="https://script.google.com/.../exec" onchange="saveSettings()">
-                                <p class="text-xs font-medium text-zinc-500 mt-2.5">Required to sync data directly to your private Google Sheet.</p>
+                                <label class="block text-sm font-bold text-indigo-400 mb-2">Gemini API Key <span class="text-[9px] uppercase bg-indigo-500/20 text-indigo-400 px-2 py-0.5 rounded border border-indigo-500/30">AI Features</span></label>
+                                <input type="password" id="gemini-key" class="w-full p-4 rounded-xl text-sm font-medium bg-black/50 border border-white/10 focus:border-indigo-500" placeholder="Paste Gemini key from Google AI Studio" onchange="saveSettings()">
+                                <p class="text-xs font-medium text-zinc-500 mt-2.5">Required for AI Food Estimation and AI Coach.</p>
                             </div>
 
                             <div>
                                 <label class="block text-sm font-bold text-white mb-2 flex items-center gap-2">USDA API Key <span class="text-[9px] uppercase bg-green-500/20 text-green-400 px-2 py-0.5 rounded border border-green-500/30">Live DB Access</span></label>
                                 <input type="password" id="usda-key" class="w-full p-4 rounded-xl text-sm font-medium bg-black/50 border border-white/10 focus:border-indigo-500" placeholder="Paste your free API key here" onchange="saveSettings()">
-                                <p class="text-xs font-medium text-zinc-500 mt-2.5">Get a free key from <strong>fdc.nal.usda.gov</strong>. If left blank or offline, system defaults to the mock DB.</p>
+                                <p class="text-xs font-medium text-zinc-500 mt-2.5">Get a free key from <strong>fdc.nal.usda.gov</strong>. If blank, uses mock DB.</p>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-bold text-white mb-2">GAS Backend URL</label>
+                                <input type="url" id="gas-url" class="w-full p-4 rounded-xl text-sm font-medium bg-black/50 border border-white/10 focus:border-indigo-500" placeholder="https://script.google.com/.../exec" onchange="saveSettings()">
                             </div>
 
                             <div>
@@ -550,7 +595,7 @@
                         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                             <div>
                                 <label class="block text-base font-black text-indigo-300 mb-1 tracking-wide">Flexible Goal Mode</label>
-                                <p class="text-xs font-medium text-indigo-200/60">Applies an 8% dynamic deficit buffer for optimal skin-health and fat loss.</p>
+                                <p class="text-xs font-medium text-indigo-200/60">Applies an 8% dynamic deficit buffer.</p>
                             </div>
                             <label class="relative inline-flex items-center cursor-pointer shrink-0">
                                 <input type="checkbox" id="goal-toggle" class="sr-only peer" onchange="toggleGoalMode()">
@@ -577,19 +622,24 @@
         </div>
     </div>
 
+    <!-- Undo Toast Notification -->
+    <div id="undo-toast" class="fixed bottom-24 left-1/2 -translate-x-1/2 z-[600] hidden">
+        <div class="bg-white text-black px-6 py-4 rounded-2xl font-black shadow-[0_10px_30px_rgba(255,255,255,0.2)] flex items-center gap-4">
+            <span>✅ Meal Logged!</span>
+            <div class="w-px h-5 bg-black/20"></div>
+            <button onclick="undoMealLog()" class="text-red-500 hover:text-red-700 underline tracking-wide font-bold">UNDO</button>
+        </div>
+    </div>
+
     <script>
         /* ========================
            STATE & CONFIGURATION
            ======================== */
-        
-        // 👇 PASTE YOUR GOOGLE APPS SCRIPT WEB APP URL BELOW 👇
-        const DEFAULT_GAS_URL = "https://script.google.com/macros/s/AKfycbzOEWz3Ajdjzu85nD0NBMYq6yJZTOwTFh3rTl85ojZlzwXoOTJyremy9yKZ7mKHGGT8/exec";
-
         let state = {
             today: { cal: 0, pro: 0, fat: 0, carb: 0, water: 0 },
             goals: { cal: 2500, pro: 150, fat: 80, carb: 200 },
             isFlexible: true,
-            currentMeal: [],
+            currentMeal: JSON.parse(localStorage.getItem('cpfcDraftMeal')) || [],
             recipes: JSON.parse(localStorage.getItem('savedRecipes')) || [],
             weeklyData: JSON.parse(localStorage.getItem('cpfcWeeklyData')) || [0, 0, 0, 0, 0, 0, 0],
             offlineQueue: JSON.parse(localStorage.getItem('cpfcOfflineQueue')) || []
@@ -598,23 +648,13 @@
         // Offline Mock DB Fallback
         const usdaDB = [
             { id: 1, name: "Chicken Breast, raw", cal: 120, pro: 22.5, fat: 2.6, carb: 0 },
-            { id: 2, name: "Chicken Thigh, raw", cal: 177, pro: 17, fat: 12, carb: 0 },
-            { id: 3, name: "White Rice, cooked", cal: 130, pro: 2.7, fat: 0.3, carb: 28 },
-            { id: 4, name: "Brown Rice, cooked", cal: 112, pro: 2.6, fat: 0.9, carb: 24 },
-            { id: 5, name: "Ground Beef 90/10, raw", cal: 176, pro: 20, fat: 10, carb: 0 },
-            { id: 6, name: "Ground Beef 80/20, raw", cal: 254, pro: 17, fat: 20, carb: 0 },
-            { id: 7, name: "Whole Egg, large", cal: 143, pro: 12.6, fat: 9.5, carb: 0.7 },
-            { id: 8, name: "Egg Whites", cal: 52, pro: 10.9, fat: 0.2, carb: 0.7 },
-            { id: 9, name: "Whey Protein Isolate", cal: 350, pro: 85, fat: 1, carb: 3 },
-            { id: 10, name: "Oats, dry", cal: 389, pro: 16.9, fat: 6.9, carb: 66 },
-            { id: 11, name: "Olive Oil", cal: 884, pro: 0, fat: 100, carb: 0 },
-            { id: 12, name: "Almonds", cal: 579, pro: 21, fat: 50, carb: 22 },
-            { id: 13, name: "Broccoli, raw", cal: 34, pro: 2.8, fat: 0.4, carb: 6.6 },
-            { id: 14, name: "Sweet Potato, raw", cal: 86, pro: 1.6, fat: 0.1, carb: 20 },
-            { id: 15, name: "Salmon, raw", cal: 208, pro: 20, fat: 13, carb: 0 }
+            { id: 2, name: "White Rice, cooked", cal: 130, pro: 2.7, fat: 0.3, carb: 28 },
+            { id: 3, name: "Whole Egg, large", cal: 143, pro: 12.6, fat: 9.5, carb: 0.7 }
         ];
 
         let selectedBaseFood = null;
+        let undoTimeout = null;
+        let pendingLogBackup = null; 
 
         /* ========================
            INITIALIZATION
@@ -624,23 +664,24 @@
             startLiveClock();
             renderDashboard();
             renderRecipes();
+            renderMealList();
             renderAnalytics(); 
             updateSyncUI();
-            
-            // Auto check queue on startup if online
             if(navigator.onLine) checkOfflineQueue();
         });
 
-        // Event listeners for going online/offline
+        // Warn before leaving if meal is staged (Auto-draft save is also active)
+        window.addEventListener('beforeunload', function (e) {
+            if (state.currentMeal.length > 0) {
+                e.preventDefault();
+                e.returnValue = '';
+            }
+        });
+
         window.addEventListener('online', handleOnlineStatus);
         window.addEventListener('offline', updateSyncUI);
 
-        const tabTitles = {
-            'dashboard': 'Dashboard',
-            'log': 'Log Meal',
-            'analytics': 'Analytics',
-            'settings': 'Configuration'
-        };
+        const tabTitles = { 'dashboard': 'Dashboard', 'log': 'Log Meal', 'coach': 'AI Coach', 'analytics': 'Analytics', 'settings': 'Configuration' };
 
         function switchTab(targetId) {
             document.querySelectorAll('section').forEach(sec => sec.classList.add('hidden'));
@@ -650,23 +691,14 @@
                 btn.classList.remove('active');
                 if(btn.dataset.target === targetId) btn.classList.add('active');
             });
-
             document.getElementById('page-title').innerText = tabTitles[targetId];
         }
 
-        /* ========================
-           LIVE CLOCK & DATE LOGIC
-           ======================== */
         function startLiveClock() {
             function updateClock() {
                 const now = new Date();
-                const timeString = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
-                document.getElementById('live-time').innerText = timeString;
-
-                const dateOptions = { weekday: 'short', month: 'short', day: 'numeric' };
-                const dateString = now.toLocaleDateString('en-US', dateOptions);
-                document.getElementById('live-date').innerText = dateString;
-
+                document.getElementById('live-time').innerText = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+                document.getElementById('live-date').innerText = now.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
                 checkShiftDay(now);
             }
             updateClock();
@@ -677,7 +709,6 @@
             const shiftTime = document.getElementById('shift-start')?.value || "00:00";
             const shiftHour = parseInt(shiftTime.split(':')[0]);
             const shiftMin = parseInt(shiftTime.split(':')[1]);
-            
             let trackerDate = new Date(now);
             if(now.getHours() < shiftHour || (now.getHours() === shiftHour && now.getMinutes() < shiftMin)) {
                 trackerDate.setDate(trackerDate.getDate() - 1);
@@ -685,213 +716,230 @@
         }
 
         /* ========================
-           SMART LIVE API SEARCH & MANUAL ENTRY
+           SEARCH & AI ESTIMATION
            ======================== */
         async function handleSearch() {
             const query = document.getElementById('food-search').value.toLowerCase();
             const dropdown = document.getElementById('search-dropdown');
             const apiKey = localStorage.getItem('usdaApiKey');
+            const geminiKey = localStorage.getItem('geminiApiKey');
             
-            if (query.length < 3) {
-                dropdown.classList.add('hidden');
-                return;
-            }
+            if (query.length < 3) { dropdown.classList.add('hidden'); return; }
 
-            // Try Live API first if configured and online
+            // 1. Try Live USDA API
             if(apiKey && navigator.onLine) {
                 dropdown.innerHTML = `<div class="p-5 text-sm font-bold text-indigo-400 text-center animate-pulse">Querying Live USDA API...</div>`;
                 dropdown.classList.remove('hidden');
-
                 try {
                     const response = await fetch(`https://api.nal.usda.gov/fdc/v1/foods/search?query=${query}&api_key=${apiKey}&pageSize=6`);
                     const data = await response.json();
-
                     if(data.foods && data.foods.length > 0) {
                         const results = data.foods.map(food => {
-                            const getNutrient = (id) => {
-                                const n = food.foodNutrients.find(x => x.nutrientId === id);
-                                return n ? n.value : 0;
-                            };
-                            return {
-                                name: food.description,
-                                cal: getNutrient(1008), 
-                                pro: getNutrient(1003), 
-                                fat: getNutrient(1004), 
-                                carb: getNutrient(1005) 
-                            };
+                            const getNutrient = (id) => { const n = food.foodNutrients.find(x => x.nutrientId === id); return n ? n.value : 0; };
+                            return { name: food.description, cal: getNutrient(1008), pro: getNutrient(1003), fat: getNutrient(1004), carb: getNutrient(1005) };
                         });
-                        
                         dropdown.innerHTML = results.map(f => `
-                            <div onclick='stageFood(${JSON.stringify(f)})' class="p-4 hover:bg-white/10 cursor-pointer border-b border-white/5 last:border-0 transition-colors">
+                            <div onclick='stageFood(${JSON.stringify(f)})' class="p-4 hover:bg-white/10 cursor-pointer border-b border-white/5 transition-colors">
                                 <div class="text-sm font-bold text-white mb-1.5 font-brand">${f.name}</div>
                                 <div class="text-[11px] font-bold text-green-400 uppercase tracking-widest">${f.cal.toFixed(0)} kcal | ${f.pro.toFixed(1)}P | ${f.fat.toFixed(1)}F | ${f.carb.toFixed(1)}C <span class="text-[9px] text-zinc-500">(100g)</span></div>
                             </div>
                         `).join('');
                         return; 
                     }
-                } catch (e) {
-                    console.error("API Error, falling back to mock DB", e);
-                }
+                } catch (e) { console.error("API Error", e); }
             }
 
-            // Fallback to Mock Offline DB
+            // 2. Try Offline Mock DB
             const results = usdaDB.filter(food => food.name.toLowerCase().includes(query));
             if (results.length > 0) {
                 dropdown.innerHTML = results.map(food => `
-                    <div onclick='stageFood(${JSON.stringify(food)})' class="p-4 hover:bg-white/10 cursor-pointer border-b border-white/5 last:border-0 transition-colors">
+                    <div onclick='stageFood(${JSON.stringify(food)})' class="p-4 hover:bg-white/10 cursor-pointer border-b border-white/5 transition-colors">
                         <div class="text-sm font-bold text-white mb-1.5 font-brand">${food.name} <span class="text-[9px] bg-zinc-800 px-1 rounded ml-1 text-zinc-400">Offline DB</span></div>
                         <div class="text-[11px] font-bold text-zinc-400 uppercase tracking-widest">${food.cal} kcal | ${food.pro}P | ${food.fat}F | ${food.carb}C <span class="text-[9px] text-zinc-600">(100g)</span></div>
                     </div>
                 `).join('');
             } else {
+                // 3. Fallback to Gemini AI for local PH foods
                 dropdown.innerHTML = `
-                    <div class="p-5 text-sm font-medium text-zinc-400 text-center">
-                        No match found. <br><span class="text-indigo-400 font-bold mt-2 inline-block">Type custom item below</span>
+                    <div class="p-4 text-center">
+                        <p class="text-sm font-medium text-zinc-400 mb-3">No strict match found in US database.</p>
+                        ${geminiKey ? `
+                        <button onclick="aiEstimateFood('${query}')" class="w-full py-3 bg-indigo-600/20 hover:bg-indigo-600/40 text-indigo-300 border border-indigo-500/50 rounded-xl text-sm font-bold transition-all flex justify-center items-center gap-2">
+                            <span>🤖 Estimate with AI</span>
+                        </button>` : `<p class="text-xs text-red-400 font-bold">Add Gemini API key in Config to unlock AI estimation for local foods.</p>`}
                     </div>
                 `;
             }
             dropdown.classList.remove('hidden');
         }
 
+        async function aiEstimateFood(foodQuery) {
+            const apiKey = localStorage.getItem('geminiApiKey');
+            const dropdown = document.getElementById('search-dropdown');
+            dropdown.innerHTML = `<div class="p-5 text-sm font-bold text-indigo-400 text-center animate-pulse">🤖 Estimating macros for ${foodQuery}...</div>`;
+            
+            // Explicit instruction to handle specific brands and local foods exactly like MFP
+            const prompt = `You are an expert nutrition database equivalent to MyFitnessPal. I need the nutritional value for 100g of the specific food or brand: "${foodQuery}". 
+            If it's a brand (like "Royal Smokehouse Chicken Luncheon Meat"), estimate it based on standard commercial equivalents.
+            Return ONLY a valid, raw JSON object (no markdown formatting, no backticks). 
+            Required keys: "name" (string, formal name), "cal" (number), "pro" (number), "fat" (number), "carb" (number).`;
+
+            try {
+                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`, {
+                    method: "POST", headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                });
+                const data = await res.json();
+                let text = data.candidates[0].content.parts[0].text;
+                text = text.replace(/```json/g, '').replace(/```/g, '').trim(); // clean markdown
+                const foodData = JSON.parse(text);
+                
+                stageFood(foodData);
+                document.getElementById('stage-name').value = foodData.name + " (AI Est.)";
+                dropdown.classList.add('hidden');
+                document.getElementById('food-search').value = '';
+            } catch (err) {
+                dropdown.innerHTML = `<div class="p-5 text-sm font-bold text-red-400 text-center">AI Error. Check key or try manual entry.</div>`;
+            }
+        }
+
+        /* --- AI COACH CHAT --- */
+        async function sendChatMessage() {
+            const input = document.getElementById('chat-input');
+            const msg = input.value.trim();
+            if(!msg) return;
+
+            const apiKey = localStorage.getItem('geminiApiKey');
+            if(!apiKey) return showModal("API Key Required", "Please enter your Gemini API Key in the Config tab to use the AI Coach.");
+
+            const chatBox = document.getElementById('chat-box');
+            
+            chatBox.innerHTML += `
+                <div class="flex justify-end">
+                    <div class="bg-indigo-600 text-white p-4 rounded-2xl rounded-tr-sm max-w-[85%] text-sm shadow-md">
+                        ${msg}
+                    </div>
+                </div>`;
+            input.value = '';
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            const context = `You are an expert fitness coach for a user on the CPFC app.
+            User Goals: ${state.goals.cal} cal, ${state.goals.pro}g pro, ${state.goals.fat}g fat, ${state.goals.carb}g carb.
+            User has eaten TODAY: ${state.today.cal} cal, ${state.today.pro}g pro, ${state.today.fat}g fat, ${state.today.carb}g carb.
+            Keep replies brief, motivating, and actionable. Avoid using markdown bolding. User asks: "${msg}"`;
+
+            const loadingId = 'load-' + Date.now();
+            chatBox.innerHTML += `
+                <div id="${loadingId}" class="flex justify-start">
+                    <div class="bg-indigo-900/40 text-indigo-300 p-4 rounded-2xl rounded-tl-sm text-sm animate-pulse border border-indigo-500/20">Thinking...</div>
+                </div>`;
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            try {
+                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`, {
+                    method: "POST", headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ contents: [{ parts: [{ text: context }] }] })
+                });
+                const data = await res.json();
+                const reply = data.candidates[0].content.parts[0].text;
+
+                document.getElementById(loadingId).remove();
+                chatBox.innerHTML += `
+                <div class="flex justify-start">
+                    <div class="bg-indigo-900/40 text-indigo-100 p-4 rounded-2xl rounded-tl-sm max-w-[85%] text-sm leading-relaxed border border-indigo-500/20 shadow-md">
+                        ${reply.replace(/\n/g, '<br>')}
+                    </div>
+                </div>`;
+                chatBox.scrollTop = chatBox.scrollHeight;
+            } catch(e) {
+                document.getElementById(loadingId).innerText = "API Error. Check config.";
+            }
+        }
+
+        /* --- STAGING MEALS --- */
         function stageFood(food) {
             selectedBaseFood = food;
             document.getElementById('search-dropdown').classList.add('hidden');
             document.getElementById('food-search').value = '';
-            
             document.getElementById('stage-name').value = food.name;
             document.getElementById('stage-grams').value = 100;
-            
             calculateStaged();
-        }
-
-        function stageCustom(name) {
-            selectedBaseFood = null;
-            document.getElementById('search-dropdown').classList.add('hidden');
-            document.getElementById('food-search').value = '';
-            
-            document.getElementById('stage-name').value = name;
-            document.getElementById('stage-grams').value = 100;
-            
-            calculateStaged();
-        }
-
-        function smartAutoFill() {
-            const input = document.getElementById('stage-name').value.toLowerCase();
-            
-            if (input.length < 3) {
-                selectedBaseFood = null;
-                return;
-            }
-
-            const match = usdaDB.find(food => food.name.toLowerCase().includes(input));
-            
-            if (match) {
-                selectedBaseFood = match;
-                calculateStaged();
-            } else {
-                selectedBaseFood = null;
-            }
-        }
-
-        function clearBaseFood() {
-            selectedBaseFood = null;
         }
 
         function calculateStaged() {
             if(!selectedBaseFood) return;
-            
-            const grams = parseFloat(document.getElementById('stage-grams').value) || 0;
-            const factor = grams / 100;
-
+            const factor = (parseFloat(document.getElementById('stage-grams').value) || 0) / 100;
             document.getElementById('stage-cal').value = (selectedBaseFood.cal * factor).toFixed(0);
             document.getElementById('stage-pro').value = (selectedBaseFood.pro * factor).toFixed(1);
             document.getElementById('stage-fat').value = (selectedBaseFood.fat * factor).toFixed(1);
             document.getElementById('stage-carb').value = (selectedBaseFood.carb * factor).toFixed(1);
         }
 
+        function clearBaseFood() { selectedBaseFood = null; }
+
         function addStagedToMeal() {
             const name = document.getElementById('stage-name').value;
             const grams = parseFloat(document.getElementById('stage-grams').value) || 0;
-            const cal = parseFloat(document.getElementById('stage-cal').value) || 0;
-            const pro = parseFloat(document.getElementById('stage-pro').value) || 0;
-            const fat = parseFloat(document.getElementById('stage-fat').value) || 0;
-            const carb = parseFloat(document.getElementById('stage-carb').value) || 0;
+            if(!name || grams <= 0) return showModal("Missing Info", "Enter an item name and valid grams.");
 
-            if(!name || grams <= 0) {
-                showModal("Missing Info", "Please enter an item name and valid grams.");
-                return;
-            }
+            state.currentMeal.push({
+                id: Date.now(), name, grams,
+                cal: parseFloat(document.getElementById('stage-cal').value) || 0,
+                pro: parseFloat(document.getElementById('stage-pro').value) || 0,
+                fat: parseFloat(document.getElementById('stage-fat').value) || 0,
+                carb: parseFloat(document.getElementById('stage-carb').value) || 0
+            });
 
-            const mealItem = { id: Date.now(), name, grams, cal, pro, fat, carb };
-
-            state.currentMeal.push(mealItem);
+            localStorage.setItem('cpfcDraftMeal', JSON.stringify(state.currentMeal));
             renderMealList();
 
-            document.getElementById('stage-name').value = '';
+            ['stage-name', 'stage-cal', 'stage-pro', 'stage-fat', 'stage-carb'].forEach(id => document.getElementById(id).value = '');
             document.getElementById('stage-grams').value = '100';
-            document.getElementById('stage-cal').value = '';
-            document.getElementById('stage-pro').value = '';
-            document.getElementById('stage-fat').value = '';
-            document.getElementById('stage-carb').value = '';
             selectedBaseFood = null;
         }
 
         function removeMealItem(id) {
             state.currentMeal = state.currentMeal.filter(item => item.id !== id);
+            localStorage.setItem('cpfcDraftMeal', JSON.stringify(state.currentMeal));
             renderMealList();
         }
 
         function renderMealList() {
             const list = document.getElementById('meal-list');
             list.innerHTML = '';
-            
             let tCal = 0, tPro = 0, tFat = 0, tCarb = 0;
 
             state.currentMeal.forEach(item => {
                 tCal += item.cal; tPro += item.pro; tFat += item.fat; tCarb += item.carb;
-                
                 list.innerHTML += `
                     <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 bg-black/40 p-4 rounded-xl border border-white/5 shadow-sm group hover:bg-black/60 transition-colors">
                         <div>
-                            <p class="text-base font-bold text-white leading-tight font-brand">${item.name}</p>
-                            <p class="text-[11px] font-bold uppercase tracking-widest text-indigo-300 mt-1.5">${item.grams}g</p>
+                            <p class="text-base font-bold text-white font-brand">${item.name}</p>
+                            <p class="text-[11px] font-bold uppercase tracking-widest text-indigo-300 mt-1">${item.grams}g</p>
                         </div>
-                        <div class="flex items-center gap-4 sm:text-right bg-white/5 sm:bg-transparent p-2 sm:p-0 rounded-lg">
-                            <div class="text-sm text-zinc-300 font-bold font-brand tracking-wide">
-                                ${item.cal.toFixed(0)} kcal
-                            </div>
-                            <button onclick="removeMealItem(${item.id})" class="text-zinc-500 hover:text-red-400 transition-colors p-2 bg-white/5 group-hover:bg-white/10 rounded-lg shrink-0">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
-                            </button>
+                        <div class="flex items-center gap-4 bg-white/5 sm:bg-transparent p-2 sm:p-0 rounded-lg">
+                            <div class="text-sm text-zinc-300 font-bold font-brand">${item.cal.toFixed(0)} kcal</div>
+                            <button onclick="removeMealItem(${item.id})" class="text-zinc-500 hover:text-red-400 transition-colors p-2"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
                         </div>
-                    </div>
-                `;
+                    </div>`;
             });
 
             document.getElementById('meal-total-display').innerText = `${tCal.toFixed(0)} kcal`;
             document.getElementById('meal-p-display').innerText = `${tPro.toFixed(1)}g`;
             document.getElementById('meal-f-display').innerText = `${tFat.toFixed(1)}g`;
             document.getElementById('meal-c-display').innerText = `${tCarb.toFixed(1)}g`;
-            
             list.scrollTop = list.scrollHeight;
         }
 
-        /* ========================
-           RECIPES & LOGGING
-           ======================== */
+        /* --- RECIPES --- */
         function saveAsRecipe() {
-            if(state.currentMeal.length === 0) {
-                showModal("Error", "Add items to your meal builder first before saving a recipe.");
-                return;
-            }
+            if(state.currentMeal.length === 0) return showModal("Error", "Add items to your meal builder first.");
             const name = prompt("Name this recipe (e.g., 'Standard Breakfast'):");
             if(!name) return;
-
-            const newRecipe = { name, items: [...state.currentMeal] };
-            state.recipes.push(newRecipe);
+            state.recipes.push({ name, items: [...state.currentMeal] });
             localStorage.setItem('savedRecipes', JSON.stringify(state.recipes));
             renderRecipes();
-            showModal("Success", `Recipe '${name}' saved. You can load it anytime from 'Quick Add Recipes'.`);
+            showModal("Success", `Recipe '${name}' saved!`);
         }
 
         function renderRecipes() {
@@ -902,114 +950,119 @@
                 return;
             }
             state.recipes.forEach((rec, idx) => {
-                container.innerHTML += `
-                    <button onclick="loadRecipe(${idx})" class="px-4 py-2.5 bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/30 rounded-xl text-xs font-bold uppercase tracking-wider text-indigo-300 transition-colors shadow-sm">
-                        ${rec.name}
-                    </button>
-                `;
+                container.innerHTML += `<button onclick="loadRecipe(${idx})" class="px-4 py-2.5 bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/30 rounded-xl text-xs font-bold uppercase tracking-wider text-indigo-300 transition-colors">${rec.name}</button>`;
             });
         }
 
         function loadRecipe(idx) {
-            const rec = state.recipes[idx];
-            const loadedItems = rec.items.map(item => ({...item, id: Date.now() + Math.random()}));
+            const loadedItems = state.recipes[idx].items.map(item => ({...item, id: Date.now() + Math.random()}));
             state.currentMeal = [...state.currentMeal, ...loadedItems];
+            localStorage.setItem('cpfcDraftMeal', JSON.stringify(state.currentMeal));
             renderMealList();
         }
 
-        async function submitMealLog() {
-            if(state.currentMeal.length === 0) {
-                showModal("Empty Meal", "Add items before logging to the system.");
-                return;
-            }
+        /* --- UNDO & LOGGING LOGIC --- */
+        function triggerSubmitWithUndo() {
+            if(state.currentMeal.length === 0) return showModal("Empty Meal", "Add items before logging.");
 
-            let totalCal = 0, totalPro = 0, totalFat = 0, totalCarb = 0;
-            const logsToPush = state.currentMeal.map(item => {
-                totalCal += item.cal;
-                totalPro += item.pro;
-                totalFat += item.fat;
-                totalCarb += item.carb;
-                return { type: 'Food', item: item.name, grams: item.grams, cal: item.cal, pro: item.pro, fat: item.fat, carb: item.carb };
-            });
+            // Backup current state for undo
+            pendingLogBackup = {
+                mealItems: [...state.currentMeal],
+                prevToday: JSON.parse(JSON.stringify(state.today)),
+                prevWeekly: [...state.weeklyData]
+            };
 
-            state.today.cal += totalCal;
-            state.today.pro += totalPro;
-            state.today.fat += totalFat;
-            state.today.carb += totalCarb;
-            
+            // Apply immediately to UI
+            let tCal = 0, tPro = 0, tFat = 0, tCarb = 0;
+            state.currentMeal.forEach(item => { tCal += item.cal; tPro += item.pro; tFat += item.fat; tCarb += item.carb; });
+
+            state.today.cal += tCal; state.today.pro += tPro; state.today.fat += tFat; state.today.carb += tCarb;
             let todayIdx = new Date().getDay() === 0 ? 6 : new Date().getDay() - 1;
             state.weeklyData[todayIdx] = state.today.cal;
-            localStorage.setItem('cpfcWeeklyData', JSON.stringify(state.weeklyData));
-
-            sendToBackend(logsToPush);
 
             state.currentMeal = [];
+            localStorage.setItem('cpfcDraftMeal', JSON.stringify([]));
             renderMealList();
             renderDashboard();
             renderAnalytics();
-            switchTab('dashboard');
+
+            // Show Toast & set 5-second timer
+            const toast = document.getElementById('undo-toast');
+            toast.classList.remove('hidden');
+            toast.classList.add('toast-enter');
+
+            clearTimeout(undoTimeout);
+            undoTimeout = setTimeout(commitMealLog, 5000); 
+        }
+
+        function undoMealLog() {
+            clearTimeout(undoTimeout);
+            
+            // Restore from backup
+            state.currentMeal = [...pendingLogBackup.mealItems];
+            state.today = JSON.parse(JSON.stringify(pendingLogBackup.prevToday));
+            state.weeklyData = [...pendingLogBackup.prevWeekly];
+            
+            localStorage.setItem('cpfcDraftMeal', JSON.stringify(state.currentMeal));
+            renderMealList();
+            renderDashboard();
+            renderAnalytics();
+
+            const toast = document.getElementById('undo-toast');
+            toast.classList.add('hidden');
+            toast.classList.remove('toast-enter');
+            pendingLogBackup = null;
+        }
+
+        function commitMealLog() {
+            const toast = document.getElementById('undo-toast');
+            toast.classList.add('hidden');
+            toast.classList.remove('toast-enter');
+            
+            const logsToPush = pendingLogBackup.mealItems.map(item => ({
+                type: 'Food', item: item.name, grams: item.grams, 
+                cal: item.cal, pro: item.pro, fat: item.fat, carb: item.carb
+            }));
+
+            localStorage.setItem('cpfcWeeklyData', JSON.stringify(state.weeklyData));
+            sendToBackend(logsToPush);
+            pendingLogBackup = null;
         }
 
         function logWater() {
-            const input = document.getElementById('water-input');
-            const amount = parseInt(input.value);
-            
-            if (!amount || amount <= 0) {
-                showModal("Invalid Amount", "Please enter a valid milliliter amount.");
-                return;
-            }
-
+            const amount = parseInt(document.getElementById('water-input').value);
+            if (!amount || amount <= 0) return showModal("Invalid Amount", "Please enter valid ml.");
             state.today.water += amount;
             document.getElementById('water-text').innerText = state.today.water;
             sendToBackend([{ type: 'Water', item: 'Water', grams: amount, cal: 0, pro: 0, fat: 0 }]);
-            
-            input.value = ''; 
+            document.getElementById('water-input').value = ''; 
         }
 
-        /* ========================
-           OFFLINE SYNC & BACKEND
-           ======================== */
+        /* --- BACKEND SYNC --- */
         function sendToBackend(dataArr) {
             const url = localStorage.getItem('gasUrl');
-            const shiftTime = document.getElementById('shift-start').value || "00:00";
             const payload = {
-                shiftStartTime: shiftTime,
+                shiftStartTime: document.getElementById('shift-start').value || "00:00",
                 timestamp: new Date().toISOString(),
                 logs: dataArr
             };
-
-            if(!url) {
-                showModal("Local Only", "Data updated on dashboard. Set your GAS URL in Config to save to cloud.");
-                return;
-            }
+            
+            if(!url || url.includes("PASTE_YOUR_WEB_APP")) return;
 
             if(!navigator.onLine) {
-                queueOfflineData(payload);
+                state.offlineQueue.push(payload);
+                localStorage.setItem('cpfcOfflineQueue', JSON.stringify(state.offlineQueue));
+                updateSyncUI();
                 return;
             }
 
-            fetch(url, {
-                method: 'POST',
-                mode: 'no-cors',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            }).then(() => {
-                checkOfflineQueue();
-            }).catch(e => {
-                queueOfflineData(payload);
+            fetch(url, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
+            .then(() => checkOfflineQueue())
+            .catch(e => {
+                state.offlineQueue.push(payload);
+                localStorage.setItem('cpfcOfflineQueue', JSON.stringify(state.offlineQueue));
+                updateSyncUI();
             });
-        }
-
-        function queueOfflineData(payload) {
-            state.offlineQueue.push(payload);
-            localStorage.setItem('cpfcOfflineQueue', JSON.stringify(state.offlineQueue));
-            updateSyncUI();
-            showModal("Offline Mode", "No internet connection. Data saved locally and will auto-sync when online.");
-        }
-
-        function handleOnlineStatus() {
-            updateSyncUI();
-            checkOfflineQueue();
         }
 
         function checkOfflineQueue() {
@@ -1017,48 +1070,38 @@
             if(!url || state.offlineQueue.length === 0 || !navigator.onLine) return;
 
             state.offlineQueue.forEach(payload => {
-                fetch(url, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                }).catch(e => console.error("Sync error", e));
+                fetch(url, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
+                .catch(e => console.error("Sync error", e));
             });
 
             state.offlineQueue = [];
             localStorage.setItem('cpfcOfflineQueue', JSON.stringify([]));
             updateSyncUI();
-            showModal("Sync Complete", "Back online! All your locally saved meals have been synced to the system.");
+            showModal("Sync Complete", "Back online! All queued data synced.");
         }
+
+        function handleOnlineStatus() { updateSyncUI(); checkOfflineQueue(); }
 
         function updateSyncUI() {
             const statusIcon = document.getElementById('sync-status');
             if (!navigator.onLine || state.offlineQueue.length > 0) {
                 statusIcon.className = "flex items-center justify-center text-orange-400";
-                statusIcon.title = "Offline - Data Queued";
                 statusIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>`;
             } else {
                 statusIcon.className = "flex items-center justify-center text-green-400";
-                statusIcon.title = "Online and Synced";
                 statusIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/><path d="m9 15 3-3 3 3"/><path d="M12 12v9"/></svg>`;
             }
         }
 
-        /* ========================
-           DASHBOARD & ANALYTICS
-           ======================== */
+        /* --- DASH & ANALYTICS --- */
         function renderDashboard() {
-            let goalCal = state.goals.cal;
-            if(state.isFlexible) goalCal = goalCal * 0.92; 
-
+            let goalCal = state.isFlexible ? state.goals.cal * 0.92 : state.goals.cal;
             const updateBar = (id, current, max) => {
-                let perc = (current / max) * 100;
-                if(perc > 100) perc = 100;
+                let perc = Math.min((current / max) * 100, 100);
                 document.getElementById(`${id}-bar`).style.width = `${perc}%`;
                 document.getElementById(`${id}-text`).innerText = current.toFixed(0);
                 document.getElementById(`${id}-max`).innerText = `/ ${max.toFixed(0)}${id==='cal'?' kcal':'g'}`;
             }
-
             updateBar('cal', state.today.cal, goalCal);
             updateBar('pro', state.today.pro, state.goals.pro);
             updateBar('fat', state.today.fat, state.goals.fat);
@@ -1070,39 +1113,24 @@
             const chart = document.getElementById('weekly-chart');
             const labels = document.getElementById('weekly-labels');
             const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-            
             const maxVal = Math.max(...state.weeklyData, state.goals.cal) + 400;
 
-            chart.innerHTML = '';
-            labels.innerHTML = '';
-
+            chart.innerHTML = ''; labels.innerHTML = '';
             state.weeklyData.forEach((val, i) => {
                 const heightPerc = (val / maxVal) * 100;
-                const isOver = val > state.goals.cal;
-                const colorClass = isOver ? 'from-indigo-500 to-cyan-500' : 'from-zinc-700 to-zinc-800';
-                const displayVal = val > 0 ? val : ''; 
-                
                 chart.innerHTML += `
                     <div class="w-full mx-2 bg-black/50 rounded-t-xl relative flex flex-col justify-end h-full border border-white/5 border-b-0">
-                        <div class="w-full bg-gradient-to-t ${colorClass} rounded-t-xl transition-all duration-1000 shadow-[inset_0_4px_10px_rgba(255,255,255,0.2)] relative overflow-hidden" style="height: ${heightPerc}%;">
-                            <div class="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent"></div>
-                        </div>
-                        <div class="absolute -top-7 left-1/2 transform -translate-x-1/2 text-white text-[10px] sm:text-xs font-black tracking-wider pointer-events-none z-10 font-brand drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
-                            ${displayVal}
-                        </div>
-                    </div>
-                `;
-                
+                        <div class="w-full bg-gradient-to-t from-indigo-500 to-cyan-500 rounded-t-xl transition-all duration-1000 shadow-[inset_0_4px_10px_rgba(255,255,255,0.2)]" style="height: ${heightPerc}%;"></div>
+                        <div class="absolute -top-7 left-1/2 transform -translate-x-1/2 text-white text-[10px] sm:text-xs font-black tracking-wider pointer-events-none">${val > 0 ? val : ''}</div>
+                    </div>`;
                 let todayIdx = new Date().getDay() === 0 ? 6 : new Date().getDay() - 1;
-                let textStyle = i === todayIdx ? 'text-indigo-400 font-black' : 'text-zinc-500';
-                labels.innerHTML += `<span class="w-full text-center tracking-wider ${textStyle}">${days[i]}</span>`;
+                labels.innerHTML += `<span class="w-full text-center ${i === todayIdx ? 'text-indigo-400 font-black' : 'text-zinc-500'}">${days[i]}</span>`;
             });
         }
 
         function toggleGoalMode() {
             state.isFlexible = !document.getElementById('goal-toggle').checked;
             const badge = document.getElementById('goal-mode-badge');
-            
             if(state.isFlexible) {
                 badge.innerText = "Flexible Mode";
                 badge.className = "text-[10px] uppercase tracking-widest font-black px-4 py-2 rounded-full border border-indigo-500/40 bg-indigo-500/15 text-indigo-300 shadow-[0_0_15px_rgba(99,102,241,0.2)]";
@@ -1113,43 +1141,31 @@
             renderDashboard();
         }
 
-        /* ========================
-           UTILITIES
-           ======================== */
+        /* --- UTILS --- */
         function saveSettings() {
             state.goals.cal = parseInt(document.getElementById('goal-cal').value) || 2500;
             state.goals.pro = parseInt(document.getElementById('goal-pro').value) || 150;
             state.goals.fat = parseInt(document.getElementById('goal-fat').value) || 80;
             state.goals.carb = parseInt(document.getElementById('goal-carb').value) || 200;
             localStorage.setItem('cpfcGoals', JSON.stringify(state.goals));
-
             localStorage.setItem('gasUrl', document.getElementById('gas-url').value);
+            localStorage.setItem('geminiApiKey', document.getElementById('gemini-key').value);
             localStorage.setItem('usdaApiKey', document.getElementById('usda-key').value);
             localStorage.setItem('shiftStart', document.getElementById('shift-start').value);
-            
-            renderDashboard();
-            renderAnalytics();
+            renderDashboard(); renderAnalytics();
             showModal("Saved", "Configuration updated successfully.");
         }
 
         function loadSettings() {
-            const savedGoals = localStorage.getItem('cpfcGoals');
-            if(savedGoals) {
-                state.goals = JSON.parse(savedGoals);
+            if(localStorage.getItem('cpfcGoals')) {
+                state.goals = JSON.parse(localStorage.getItem('cpfcGoals'));
                 document.getElementById('goal-cal').value = state.goals.cal;
                 document.getElementById('goal-pro').value = state.goals.pro;
                 document.getElementById('goal-fat').value = state.goals.fat;
                 document.getElementById('goal-carb').value = state.goals.carb;
             }
-
-            // Apply default GAS URL if it's set in the code and local storage is empty
-            if(localStorage.getItem('gasUrl')) {
-                document.getElementById('gas-url').value = localStorage.getItem('gasUrl');
-            } else if (DEFAULT_GAS_URL && DEFAULT_GAS_URL !== "PASTE_YOUR_WEB_APP_URL_HERE") {
-                document.getElementById('gas-url').value = DEFAULT_GAS_URL;
-                localStorage.setItem('gasUrl', DEFAULT_GAS_URL);
-            }
-
+            if(localStorage.getItem('gasUrl')) document.getElementById('gas-url').value = localStorage.getItem('gasUrl');
+            if(localStorage.getItem('geminiApiKey')) document.getElementById('gemini-key').value = localStorage.getItem('geminiApiKey');
             if(localStorage.getItem('usdaApiKey')) document.getElementById('usda-key').value = localStorage.getItem('usdaApiKey');
             if(localStorage.getItem('shiftStart')) document.getElementById('shift-start').value = localStorage.getItem('shiftStart');
             document.getElementById('goal-toggle').checked = !state.isFlexible;
@@ -1161,14 +1177,12 @@
             document.getElementById('modal-msg').innerText = msg;
             const modal = document.getElementById('custom-modal');
             const content = document.getElementById('modal-content');
-            
             modal.classList.remove('hidden');
             setTimeout(() => content.classList.remove('scale-95'), 10);
         }
         function closeModal() {
             const modal = document.getElementById('custom-modal');
             const content = document.getElementById('modal-content');
-            
             content.classList.add('scale-95');
             setTimeout(() => modal.classList.add('hidden'), 200);
         }
