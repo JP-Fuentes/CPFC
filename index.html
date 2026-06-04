@@ -120,7 +120,8 @@
         ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 10px; }
         ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.25); }
         
-        .search-results { max-height: 280px; overflow-y: auto; }
+        /* Overscroll prevent whole page scroll when scrolling dropdown */
+        .search-results { max-height: 280px; overflow-y: auto; overscroll-behavior: contain; }
 
         /* Nav states */
         .nav-btn { color: var(--text-muted); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
@@ -138,6 +139,9 @@
             to { opacity: 1; transform: translateY(0) translateX(-50%); }
         }
         .toast-enter { animation: slideUpFade 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        
+        /* Side Toast Animation */
+        .side-toast-enter { transform: translateX(0) !important; opacity: 1 !important; }
     </style>
 </head>
 <body class="app-shell flex-col md:flex-row">
@@ -381,15 +385,16 @@
                                     </div>
                                     <input type="text" id="food-search" oninput="handleSearch()" class="w-full pl-12 pr-4 py-4 rounded-xl text-base font-medium placeholder-zinc-600 border-white/10 focus:border-indigo-500 bg-black/50 shadow-inner transition-colors" placeholder="Search USDA DB or type local PH food...">
                                     
-                                    <!-- Dropdown Results -->
-                                    <div id="search-dropdown" class="search-results absolute w-full mt-3 bg-gray-900/95 backdrop-blur-3xl border border-indigo-500/40 rounded-xl shadow-[0_20px_50px_-10px_rgba(0,0,0,0.8)] z-[200] hidden overflow-hidden">
+                                    <!-- Dropdown Results - Added overscroll-contain to fix scrolling bug -->
+                                    <div id="search-dropdown" class="search-results absolute w-full mt-3 bg-gray-900/95 backdrop-blur-3xl border border-indigo-500/40 rounded-xl shadow-[0_20px_50px_-10px_rgba(0,0,0,0.8)] z-[200] hidden overflow-y-auto overscroll-contain">
                                         <!-- Populated by JS API Call -->
                                     </div>
                                 </div>
                                 
                                 <!-- Permanent AI Button -->
-                                <button onclick="forceAISearch()" class="sm:w-auto w-full px-6 py-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-sm font-black transition-all flex justify-center items-center gap-2 shadow-[0_0_15px_rgba(79,70,229,0.4)] shrink-0 z-[200]">
-                                    🤖 AI Auto-Fill
+                                <button onclick="forceAISearch()" class="sm:w-auto w-full px-6 py-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-sm font-black transition-all flex flex-col justify-center items-center gap-1 shadow-[0_0_15px_rgba(79,70,229,0.4)] shrink-0 z-[200]">
+                                    <div class="flex items-center gap-2">🤖 AI Auto-Fill</div>
+                                    <span id="ai-counter-btn" class="text-[9px] text-indigo-200 uppercase tracking-widest bg-black/20 px-2 py-0.5 rounded-full border border-white/10">0 / 50</span>
                                 </button>
                             </div>
                         </div>
@@ -486,14 +491,17 @@
             <!-- AI COACH TAB -->
             <section id="tab-coach" class="hidden animate-fade-in h-[75vh]">
                 <div class="card p-0 flex flex-col h-full relative overflow-hidden">
-                    <div class="p-5 border-b border-white/10 flex items-center gap-4 bg-indigo-900/20 shrink-0">
-                        <div class="w-10 h-10 rounded-full bg-gradient-to-r from-purple-500 to-indigo-500 flex items-center justify-center text-white">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg>
+                    <div class="p-5 border-b border-white/10 flex items-center justify-between gap-4 bg-indigo-900/20 shrink-0">
+                        <div class="flex items-center gap-4">
+                            <div class="w-10 h-10 rounded-full bg-gradient-to-r from-purple-500 to-indigo-500 flex items-center justify-center text-white">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg>
+                            </div>
+                            <div>
+                                <h2 class="text-base font-black text-white">Gemini Nutrition Coach</h2>
+                                <p class="text-[11px] text-indigo-300">Your personal diet assistant.</p>
+                            </div>
                         </div>
-                        <div>
-                            <h2 class="text-base font-black text-white">Gemini Nutrition Coach</h2>
-                            <p class="text-[11px] text-indigo-300">Your personal diet assistant.</p>
-                        </div>
+                        <span id="ai-counter-coach" class="text-[10px] text-indigo-300 uppercase tracking-widest bg-black/40 px-3 py-1 rounded-full border border-indigo-500/30 shadow-inner">0 / 50</span>
                     </div>
                     
                     <div id="chat-box" class="flex-1 overflow-y-auto p-6 space-y-4 scroll-smooth">
@@ -576,6 +584,12 @@
                             </div>
 
                             <div>
+                                <label class="block text-sm font-bold text-indigo-400 mb-2">Daily AI Soft Limit <span class="text-[9px] uppercase bg-indigo-500/20 text-indigo-400 px-2 py-0.5 rounded border border-indigo-500/30">Cost Control</span></label>
+                                <input type="number" id="ai-limit" class="w-full p-4 rounded-xl text-base font-bold bg-black/50 border border-white/10 focus:border-indigo-500 max-w-[200px]" value="50" onchange="saveSettings()">
+                                <p class="text-xs font-medium text-zinc-500 mt-2.5">Prevents accidental spamming. Resets daily.</p>
+                            </div>
+
+                            <div>
                                 <label class="block text-sm font-bold text-white mb-2 flex items-center gap-2">USDA API Key <span class="text-[9px] uppercase bg-green-500/20 text-green-400 px-2 py-0.5 rounded border border-green-500/30">Live DB Access</span></label>
                                 <input type="password" id="usda-key" class="w-full p-4 rounded-xl text-sm font-medium bg-black/50 border border-white/10 focus:border-indigo-500" placeholder="Paste your free API key here" onchange="saveSettings()">
                                 <p class="text-xs font-medium text-zinc-500 mt-2.5">Get a free key from <strong>fdc.nal.usda.gov</strong>. If blank, uses mock DB.</p>
@@ -610,6 +624,14 @@
                         </div>
                     </div>
 
+                    <!-- Explicit Save Button Added Here -->
+                    <div class="pt-6">
+                        <button onclick="saveSettings()" class="w-full py-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-base font-black shadow-[0_0_20px_rgba(79,70,229,0.4)] transition-colors flex items-center justify-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                            Save Configuration
+                        </button>
+                    </div>
+
                 </div>
             </section>
 
@@ -637,6 +659,15 @@
         </div>
     </div>
 
+    <!-- System Side Toast (For AI Limits & Errors) -->
+    <div id="sys-toast" class="fixed top-24 right-4 z-[9999] transform translate-x-[120%] opacity-0 transition-all duration-300 ease-out flex items-center gap-3 p-4 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.8)] border max-w-sm">
+        <div id="sys-toast-icon" class="w-8 h-8 rounded-full flex items-center justify-center shrink-0"></div>
+        <div>
+            <h4 id="sys-toast-title" class="text-sm font-black text-white">Title</h4>
+            <p id="sys-toast-msg" class="text-[11px] font-medium text-zinc-300 mt-0.5 leading-tight">Message goes here.</p>
+        </div>
+    </div>
+
     <script>
         /* ========================
            STATE & CONFIGURATION
@@ -645,6 +676,7 @@
             today: { cal: 0, pro: 0, fat: 0, carb: 0, water: 0 },
             goals: { cal: 2500, pro: 150, fat: 80, carb: 200 },
             isFlexible: true,
+            aiUsage: JSON.parse(localStorage.getItem('cpfcAiUsage')) || { count: 0, date: new Date().toLocaleDateString(), limit: 50 },
             currentMeal: JSON.parse(localStorage.getItem('cpfcDraftMeal')) || [],
             recipes: JSON.parse(localStorage.getItem('savedRecipes')) || [],
             weeklyData: JSON.parse(localStorage.getItem('cpfcWeeklyData')) || [0, 0, 0, 0, 0, 0, 0],
@@ -667,6 +699,7 @@
            ======================== */
         document.addEventListener('DOMContentLoaded', () => {
             loadSettings();
+            checkAICounterReset();
             startLiveClock();
             renderDashboard();
             renderRecipes();
@@ -724,6 +757,68 @@
         /* ========================
            SEARCH & AI ESTIMATION
            ======================== */
+        
+        // Custom Generic Side Toast
+        let sysToastTimer;
+        function showSysToast(title, msg, type = 'info') {
+            const toast = document.getElementById('sys-toast');
+            const iconBox = document.getElementById('sys-toast-icon');
+            
+            document.getElementById('sys-toast-title').innerText = title;
+            document.getElementById('sys-toast-msg').innerText = msg;
+            
+            toast.className = `fixed top-24 right-4 z-[9999] transform transition-all duration-300 ease-out flex items-center gap-3 p-4 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.8)] border max-w-sm translate-x-[120%] opacity-0`;
+            
+            if(type === 'error' || type === 'limit') {
+                toast.classList.add('bg-red-900/90', 'border-red-500/50');
+                iconBox.className = "w-8 h-8 rounded-full flex items-center justify-center shrink-0 bg-red-500/20 text-red-400";
+                iconBox.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>`;
+            } else if (type === 'warning') {
+                toast.classList.add('bg-orange-900/90', 'border-orange-500/50');
+                iconBox.className = "w-8 h-8 rounded-full flex items-center justify-center shrink-0 bg-orange-500/20 text-orange-400";
+                iconBox.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>`;
+            } else {
+                toast.classList.add('bg-indigo-900/90', 'border-indigo-500/50');
+                iconBox.className = "w-8 h-8 rounded-full flex items-center justify-center shrink-0 bg-indigo-500/20 text-indigo-400";
+                iconBox.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m9 12 2 2 4-4"/></svg>`;
+            }
+
+            // Trigger animation frame delay for CSS transition
+            setTimeout(() => { toast.classList.add('side-toast-enter'); }, 10);
+            
+            clearTimeout(sysToastTimer);
+            sysToastTimer = setTimeout(() => {
+                toast.classList.remove('side-toast-enter');
+            }, 4000);
+        }
+
+        // AI Counter Logic
+        function checkAICounterReset() {
+            const todayStr = new Date().toLocaleDateString();
+            if (state.aiUsage.date !== todayStr) {
+                state.aiUsage.count = 0;
+                state.aiUsage.date = todayStr;
+                localStorage.setItem('cpfcAiUsage', JSON.stringify(state.aiUsage));
+            }
+            updateAICounterUI();
+        }
+
+        function incrementAICounter() {
+            state.aiUsage.count++;
+            localStorage.setItem('cpfcAiUsage', JSON.stringify(state.aiUsage));
+            updateAICounterUI();
+            
+            const remaining = state.aiUsage.limit - state.aiUsage.count;
+            if (remaining === 5) showSysToast("AI Limit Nearing", "You have 5 AI requests left for today.", "warning");
+            if (remaining === 0) showSysToast("AI Limit Reached", "You've hit your daily soft limit. Increase it in config if needed.", "limit");
+        }
+
+        function updateAICounterUI() {
+            const txt = `${state.aiUsage.count} / ${state.aiUsage.limit}`;
+            document.getElementById('ai-counter-btn').innerText = txt;
+            document.getElementById('ai-counter-coach').innerText = `Uses: ${txt}`;
+        }
+
         async function handleSearch() {
             const query = document.getElementById('food-search').value.toLowerCase();
             const dropdown = document.getElementById('search-dropdown');
@@ -785,6 +880,9 @@
             if(!query) return showModal("Empty Search", "Please type a food name first to use AI Auto-Fill.");
             const geminiKey = localStorage.getItem('geminiApiKey');
             if(!geminiKey) return showModal("API Key Required", "Please enter your Gemini API Key in the Config tab.");
+            if(state.aiUsage.count >= state.aiUsage.limit) {
+                return showSysToast("Limit Reached", "Daily AI limit reached. Go to Config to increase it.", "limit");
+            }
             
             aiEstimateFood(query);
         }
@@ -808,20 +906,37 @@
             Return ONLY a valid, raw JSON object (no markdown formatting, no backticks, no intro text). 
             Required keys: "name" (string, formal name), "cal" (number), "pro" (number), "fat" (number), "carb" (number).`;
 
+            let currentModel = "gemini-1.5-flash"; // Primary fast model
+            let fetchSuccess = false;
+            let responseData = null;
+
             try {
-                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`, {
+                // Attempt 1: Standard Flash Model
+                let res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${currentModel}:generateContent?key=${apiKey}`, {
                     method: "POST", headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
                 });
                 
-                const data = await res.json();
-                
-                // If Google rejects the API key or request, catch it clearly
-                if (!res.ok) {
-                    throw new Error(data.error?.message || "Google API rejected the request.");
+                // If Rate Limited, try Fallback immediately
+                if (res.status === 429) {
+                    showSysToast("Rate Limit Hit", "Falling back to lighter model...", "warning");
+                    currentModel = "gemini-1.5-flash-8b"; // Lighter fallback model
+                    res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${currentModel}:generateContent?key=${apiKey}`, {
+                        method: "POST", headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                    });
                 }
 
-                let text = data.candidates[0].content.parts[0].text;
+                responseData = await res.json();
+                
+                if (!res.ok) {
+                    throw new Error(responseData.error?.message || "Google API rejected the request.");
+                }
+                
+                incrementAICounter();
+                fetchSuccess = true;
+
+                let text = responseData.candidates[0].content.parts[0].text;
                 // Aggressive cleanup in case the AI tries to be chatty or uses markdown
                 text = text.replace(/```json/gi, '').replace(/```/g, '').trim(); 
                 if (text.startsWith('`')) text = text.substring(1);
@@ -835,11 +950,16 @@
                 document.getElementById('food-search').value = '';
             } catch (err) {
                 console.error("Full AI Error Details:", err);
+                
+                if (err.message.includes("Quota exceeded") || err.message.includes("429")) {
+                    showSysToast("Quota Exceeded", "Google API daily quota limit reached. Please wait or check billing.", "error");
+                }
+
                 dropdown.innerHTML = `
                     <div class="p-4 bg-red-500/10 border-t border-red-500/20 text-center">
                         <p class="text-xs font-bold text-red-400 mb-1">AI Request Failed</p>
                         <p class="text-[10px] text-zinc-400">${err.message}</p>
-                        <p class="text-[10px] text-indigo-300 mt-2">Tip: Go to Config, paste your key again, and click OUTSIDE the box to save.</p>
+                        <p class="text-[10px] text-indigo-300 mt-2">Tip: Check your API Key in Config settings.</p>
                     </div>`;
             }
         }
@@ -852,6 +972,9 @@
 
             const apiKey = localStorage.getItem('geminiApiKey');
             if(!apiKey) return showModal("API Key Required", "Please enter your Gemini API Key in the Config tab to use the AI Coach.");
+            if(state.aiUsage.count >= state.aiUsage.limit) {
+                return showSysToast("Limit Reached", "Daily AI limit reached. Go to Config to increase it.", "limit");
+            }
 
             const chatBox = document.getElementById('chat-box');
             
@@ -876,12 +999,28 @@
                 </div>`;
             chatBox.scrollTop = chatBox.scrollHeight;
 
+            let currentModel = "gemini-1.5-flash";
+
             try {
-                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`, {
+                let res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${currentModel}:generateContent?key=${apiKey}`, {
                     method: "POST", headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ contents: [{ parts: [{ text: context }] }] })
                 });
+
+                if (res.status === 429) {
+                    showSysToast("Rate Limit Hit", "Falling back to lighter model...", "warning");
+                    currentModel = "gemini-1.5-flash-8b";
+                    res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${currentModel}:generateContent?key=${apiKey}`, {
+                        method: "POST", headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ contents: [{ parts: [{ text: context }] }] })
+                    });
+                }
+                
                 const data = await res.json();
+                
+                if (!res.ok) throw new Error(data.error?.message || "API Error");
+                
+                incrementAICounter();
                 const reply = data.candidates[0].content.parts[0].text;
 
                 document.getElementById(loadingId).remove();
@@ -893,7 +1032,10 @@
                 </div>`;
                 chatBox.scrollTop = chatBox.scrollHeight;
             } catch(e) {
-                document.getElementById(loadingId).innerText = "API Error. Check config.";
+                if (e.message.includes("Quota") || e.message.includes("429")) {
+                    showSysToast("Quota Exceeded", "Google API limit reached.", "error");
+                }
+                document.getElementById(loadingId).innerText = `Error: ${e.message}`;
             }
         }
 
@@ -1188,12 +1330,18 @@
             state.goals.pro = parseInt(document.getElementById('goal-pro').value) || 150;
             state.goals.fat = parseInt(document.getElementById('goal-fat').value) || 80;
             state.goals.carb = parseInt(document.getElementById('goal-carb').value) || 200;
+            state.aiUsage.limit = parseInt(document.getElementById('ai-limit').value) || 50;
+            
             localStorage.setItem('cpfcGoals', JSON.stringify(state.goals));
+            localStorage.setItem('cpfcAiUsage', JSON.stringify(state.aiUsage));
             localStorage.setItem('gasUrl', document.getElementById('gas-url').value);
             localStorage.setItem('geminiApiKey', document.getElementById('gemini-key').value);
             localStorage.setItem('usdaApiKey', document.getElementById('usda-key').value);
             localStorage.setItem('shiftStart', document.getElementById('shift-start').value);
-            renderDashboard(); renderAnalytics();
+            
+            updateAICounterUI();
+            renderDashboard(); 
+            renderAnalytics();
             showModal("Saved", "Configuration updated successfully.");
         }
 
@@ -1209,6 +1357,9 @@
             if(localStorage.getItem('geminiApiKey')) document.getElementById('gemini-key').value = localStorage.getItem('geminiApiKey');
             if(localStorage.getItem('usdaApiKey')) document.getElementById('usda-key').value = localStorage.getItem('usdaApiKey');
             if(localStorage.getItem('shiftStart')) document.getElementById('shift-start').value = localStorage.getItem('shiftStart');
+            
+            document.getElementById('ai-limit').value = state.aiUsage.limit;
+            
             document.getElementById('goal-toggle').checked = !state.isFlexible;
             toggleGoalMode();
         }
