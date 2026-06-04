@@ -792,13 +792,20 @@
         async function aiEstimateFood(foodQuery) {
             const apiKey = localStorage.getItem('geminiApiKey');
             const dropdown = document.getElementById('search-dropdown');
+            
+            if(!apiKey) {
+                dropdown.innerHTML = `<div class="p-5 text-sm font-bold text-red-400 text-center">Missing Gemini API Key. Please add it in the Config tab.</div>`;
+                dropdown.classList.remove('hidden');
+                return;
+            }
+
             dropdown.innerHTML = `<div class="p-5 text-sm font-bold text-indigo-400 text-center animate-pulse">🤖 Estimating macros for ${foodQuery}...</div>`;
             dropdown.classList.remove('hidden');
             
             // Explicit instruction to handle specific brands and local foods exactly like MFP
             const prompt = `You are an expert nutrition database equivalent to MyFitnessPal. I need the nutritional value for 100g of the specific food or brand: "${foodQuery}". 
             If it's a brand (like "Royal Smokehouse Chicken Luncheon Meat"), estimate it based on standard commercial equivalents.
-            Return ONLY a valid, raw JSON object (no markdown formatting, no backticks). 
+            Return ONLY a valid, raw JSON object (no markdown formatting, no backticks, no intro text). 
             Required keys: "name" (string, formal name), "cal" (number), "pro" (number), "fat" (number), "carb" (number).`;
 
             try {
@@ -806,9 +813,20 @@
                     method: "POST", headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
                 });
+                
                 const data = await res.json();
+                
+                // If Google rejects the API key or request, catch it clearly
+                if (!res.ok) {
+                    throw new Error(data.error?.message || "Google API rejected the request.");
+                }
+
                 let text = data.candidates[0].content.parts[0].text;
-                text = text.replace(/```json/g, '').replace(/```/g, '').trim(); // clean markdown
+                // Aggressive cleanup in case the AI tries to be chatty or uses markdown
+                text = text.replace(/```json/gi, '').replace(/```/g, '').trim(); 
+                if (text.startsWith('`')) text = text.substring(1);
+                if (text.endsWith('`')) text = text.substring(0, text.length - 1);
+                
                 const foodData = JSON.parse(text);
                 
                 stageFood(foodData);
@@ -816,7 +834,13 @@
                 dropdown.classList.add('hidden');
                 document.getElementById('food-search').value = '';
             } catch (err) {
-                dropdown.innerHTML = `<div class="p-5 text-sm font-bold text-red-400 text-center">AI Error. Check key or try manual entry.</div>`;
+                console.error("Full AI Error Details:", err);
+                dropdown.innerHTML = `
+                    <div class="p-4 bg-red-500/10 border-t border-red-500/20 text-center">
+                        <p class="text-xs font-bold text-red-400 mb-1">AI Request Failed</p>
+                        <p class="text-[10px] text-zinc-400">${err.message}</p>
+                        <p class="text-[10px] text-indigo-300 mt-2">Tip: Go to Config, paste your key again, and click OUTSIDE the box to save.</p>
+                    </div>`;
             }
         }
 
