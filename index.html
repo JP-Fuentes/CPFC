@@ -819,6 +819,59 @@
             document.getElementById('ai-counter-coach').innerText = `Uses: ${txt}`;
         }
 
+        // CENTRALIZED AI CALLER WITH AUTO-FALLBACK
+        async function callGeminiAPI(prompt, apiKey) {
+            // Models to try in order of preference. It scans from newest to oldest.
+            // If one returns a 404 (Not Found) or 429 (Rate Limit), it instantly tries the next.
+            const models = [
+                "gemini-3.5-flash", 
+                "gemini-3.1-flash", 
+                "gemini-3.0-flash",
+                "gemini-2.5-flash",
+                "gemini-2.0-flash",
+                "gemini-1.5-flash", 
+                "gemini-1.5-flash-8b", 
+                "gemini-pro"
+            ];
+            let lastErr = "";
+
+            for (const model of models) {
+                try {
+                    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
+                        method: "POST", headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                    });
+                    
+                    const data = await res.json();
+                    
+                    if (res.ok) {
+                        incrementAICounter();
+                        return data.candidates[0].content.parts[0].text;
+                    }
+                    
+                    lastErr = data.error?.message || `Error with ${model}`;
+                    
+                    // If model not found (404) or rate limited (429), loop to next model
+                    if (res.status === 404 || res.status === 429) {
+                        console.warn(`Model ${model} failed (${res.status}). Trying fallback...`);
+                        continue; 
+                    }
+                    
+                    // Break loop on completely invalid API keys (400)
+                    if (res.status === 400 && lastErr.toLowerCase().includes("api key not valid")) {
+                        throw new Error("API Key not valid");
+                    }
+                    
+                    throw new Error(lastErr);
+
+                } catch (err) {
+                    lastErr = err.message;
+                    if (err.message === "API Key not valid") throw err;
+                }
+            }
+            throw new Error(`All models failed. Last error: ${lastErr}`);
+        }
+
         async function handleSearch() {
             const query = document.getElementById('food-search').value.toLowerCase();
             const dropdown = document.getElementById('search-dropdown');
@@ -897,7 +950,11 @@
                 return;
             }
 
-            dropdown.innerHTML = `<div class="p-5 text-sm font-bold text-indigo-400 text-center animate-pulse">🤖 Estimating macros for ${foodQuery}...</div>`;
+            dropdown.innerHTML = `
+                <div class="p-5 text-sm font-bold text-indigo-400 text-center animate-pulse">
+                    🤖 Estimating macros for ${foodQuery}...
+                    <p class="text-[9px] text-indigo-300/50 mt-2 font-normal">Finding optimal AI model...</p>
+                </div>`;
             dropdown.classList.remove('hidden');
             
             // Explicit instruction to handle specific brands and local foods exactly like MFP
@@ -906,60 +963,35 @@
             Return ONLY a valid, raw JSON object (no markdown formatting, no backticks, no intro text). 
             Required keys: "name" (string, formal name), "cal" (number), "pro" (number), "fat" (number), "carb" (number).`;
 
-            let currentModel = "gemini-1.5-flash"; // Primary fast model
-            let fetchSuccess = false;
-            let responseData = null;
-
             try {
-                // Attempt 1: Standard Flash Model
-                let res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${currentModel}:generateContent?key=${apiKey}`, {
-                    method: "POST", headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-                });
+                // Uses the new central AI caller that cascades through models
+                const text = await callGeminiAPI(prompt, apiKey);
                 
-                // If Rate Limited, try Fallback immediately
-                if (res.status === 429) {
-                    showSysToast("Rate Limit Hit", "Falling back to lighter model...", "warning");
-                    currentModel = "gemini-1.5-flash-8b"; // Lighter fallback model
-                    res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${currentModel}:generateContent?key=${apiKey}`, {
-                        method: "POST", headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-                    });
-                }
-
-                responseData = await res.json();
-                
-                if (!res.ok) {
-                    throw new Error(responseData.error?.message || "Google API rejected the request.");
-                }
-                
-                incrementAICounter();
-                fetchSuccess = true;
-
-                let text = responseData.candidates[0].content.parts[0].text;
                 // Aggressive cleanup in case the AI tries to be chatty or uses markdown
-                text = text.replace(/```json/gi, '').replace(/```/g, '').trim(); 
-                if (text.startsWith('`')) text = text.substring(1);
-                if (text.endsWith('`')) text = text.substring(0, text.length - 1);
+                let cleanText = text.replace(/```json/gi, '').replace(/```/g, '').trim(); 
+                if (cleanText.startsWith('`')) cleanText = cleanText.substring(1);
+                if (cleanText.endsWith('`')) cleanText = cleanText.substring(0, cleanText.length - 1);
                 
-                const foodData = JSON.parse(text);
+                const foodData = JSON.parse(cleanText);
                 
                 stageFood(foodData);
                 document.getElementById('stage-name').value = foodData.name + " (AI Est.)";
                 dropdown.classList.add('hidden');
                 document.getElementById('food-search').value = '';
+                
             } catch (err) {
                 console.error("Full AI Error Details:", err);
                 
-                if (err.message.includes("Quota exceeded") || err.message.includes("429")) {
-                    showSysToast("Quota Exceeded", "Google API daily quota limit reached. Please wait or check billing.", "error");
+                let errorHint = "Tip: Check your API Key in Config settings.";
+                if (err.message.includes("API Key not valid")) {
+                    errorHint = "Your API Key is invalid. Please check Config.";
                 }
-
+                
                 dropdown.innerHTML = `
                     <div class="p-4 bg-red-500/10 border-t border-red-500/20 text-center">
                         <p class="text-xs font-bold text-red-400 mb-1">AI Request Failed</p>
                         <p class="text-[10px] text-zinc-400">${err.message}</p>
-                        <p class="text-[10px] text-indigo-300 mt-2">Tip: Check your API Key in Config settings.</p>
+                        <p class="text-[10px] text-indigo-300 mt-2">${errorHint}</p>
                     </div>`;
             }
         }
@@ -999,29 +1031,9 @@
                 </div>`;
             chatBox.scrollTop = chatBox.scrollHeight;
 
-            let currentModel = "gemini-1.5-flash";
-
             try {
-                let res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${currentModel}:generateContent?key=${apiKey}`, {
-                    method: "POST", headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ contents: [{ parts: [{ text: context }] }] })
-                });
-
-                if (res.status === 429) {
-                    showSysToast("Rate Limit Hit", "Falling back to lighter model...", "warning");
-                    currentModel = "gemini-1.5-flash-8b";
-                    res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${currentModel}:generateContent?key=${apiKey}`, {
-                        method: "POST", headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ contents: [{ parts: [{ text: context }] }] })
-                    });
-                }
-                
-                const data = await res.json();
-                
-                if (!res.ok) throw new Error(data.error?.message || "API Error");
-                
-                incrementAICounter();
-                const reply = data.candidates[0].content.parts[0].text;
+                // Uses the new central AI caller that cascades through models
+                const reply = await callGeminiAPI(context, apiKey);
 
                 document.getElementById(loadingId).remove();
                 chatBox.innerHTML += `
@@ -1032,9 +1044,6 @@
                 </div>`;
                 chatBox.scrollTop = chatBox.scrollHeight;
             } catch(e) {
-                if (e.message.includes("Quota") || e.message.includes("429")) {
-                    showSysToast("Quota Exceeded", "Google API limit reached.", "error");
-                }
                 document.getElementById(loadingId).innerText = `Error: ${e.message}`;
             }
         }
