@@ -395,12 +395,12 @@
                                     <input type="text" id="food-search" oninput="handleSearch()" class="w-full pl-12 pr-4 py-4 rounded-xl text-base font-medium placeholder-zinc-600 border-white/10 focus:border-indigo-500 bg-black/50 shadow-inner transition-colors" placeholder="Type local PH food or use barcode...">
                                     
                                     <!-- Search Dropdown -->
-                                    <div id="search-dropdown" class="search-results absolute w-full mt-3 bg-gray-900/95 backdrop-blur-3xl border border-indigo-500/40 rounded-xl shadow-[0_20px_50px_-10px_rgba(0,0,0,0.8)] z-[200] hidden overflow-y-auto overscroll-contain">
+                                    <div id="search-dropdown" class="search-results absolute w-full mt-3 bg-gray-900/95 backdrop-blur-3xl border border-indigo-500/40 rounded-xl shadow-[0_20px_50px_-10px_rgba(0,0,0,0.8)] z-[999] hidden overflow-y-auto overscroll-contain">
                                         <!-- Populated by JS -->
                                     </div>
                                 </div>
                                 
-                                <div class="flex gap-2 z-[200]">
+                                <div class="flex gap-2 relative z-10">
                                     <!-- UPGRADE: Barcode Scanner Button -->
                                     <button onclick="openScanner()" class="px-5 py-4 bg-zinc-800 hover:bg-zinc-700 border border-white/10 text-white rounded-xl text-sm font-black transition-all flex justify-center items-center shadow-md">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><rect x="7" y="7" width="10" height="10" rx="1"/></svg>
