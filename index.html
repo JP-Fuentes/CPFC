@@ -1576,6 +1576,65 @@
             content.classList.add('scale-95');
             setTimeout(() => modal.classList.add('hidden'), 200);
         }
+        function calculateStaged() {
+    let typedName = document.getElementById('stage-name').value.toLowerCase();
+    
+    if(selectedBaseFood && !selectedBaseFood.name.toLowerCase().includes(typedName) && !typedName.includes(selectedBaseFood.name.toLowerCase())) {
+         selectedBaseFood = null;
+    }
+
+    if(!selectedBaseFood && typedName.length > 2) {
+        let match = localPHDatabase.find(food => food.name.toLowerCase().includes(typedName));
+        if(match) selectedBaseFood = match;
+    }
+
+    if(!selectedBaseFood) return;
+    const factor = (parseFloat(document.getElementById('stage-grams').value) || 0) / 100;
+
+    document.getElementById('stage-cal').value = (selectedBaseFood.cal * factor).toFixed(0);
+    document.getElementById('stage-pro').value = (selectedBaseFood.pro * factor).toFixed(1);
+    document.getElementById('stage-fat').value = (selectedBaseFood.fat * factor).toFixed(1);
+    document.getElementById('stage-carb').value = (selectedBaseFood.carb * factor).toFixed(1);
+}
+
+async function addStagedToMeal() {
+    const name = document.getElementById('stage-name').value;
+    let grams = parseFloat(document.getElementById('stage-grams').value) || 0;
+    let cal = parseFloat(document.getElementById('stage-cal').value) || 0;
+
+    if(!name || grams <= 0) return showModal("Missing Info", "Enter an item name and valid grams.");
+
+    if(cal === 0 && !selectedBaseFood) {
+        document.getElementById('stage-cal').value = "...";
+        showSysToast("AI Activating", "Calculating unknown food...");
+        try {
+            const prompt = `Give me the nutritional value for 100g of: "${name}". Return ONLY valid JSON: {"name":"${name}","cal":num,"pro":num,"fat":num,"carb":num}`;
+            const text = await callGeminiAPI(prompt, localStorage.getItem('geminiApiKey'));
+            const foodData = JSON.parse(text.replace(/```json/gi, '').replace(/```/g, '').trim());
+            selectedBaseFood = foodData;
+            calculateStaged();
+            cal = parseFloat(document.getElementById('stage-cal').value);
+        } catch(e) {
+            document.getElementById('stage-cal').value = "0";
+            return showModal("AI Error", "Could not calculate. Enter macros manually.");
+        }
+    }
+
+    state.currentMeal.push({
+        id: Date.now(), name, grams,
+        cal: parseFloat(document.getElementById('stage-cal').value) || 0,
+        pro: parseFloat(document.getElementById('stage-pro').value) || 0,
+        fat: parseFloat(document.getElementById('stage-fat').value) || 0,
+        carb: parseFloat(document.getElementById('stage-carb').value) || 0
+    });
+
+    localStorage.setItem('cpfcDraftMeal', JSON.stringify(state.currentMeal));
+    renderMealList();
+    ['stage-name', 'stage-cal', 'stage-pro', 'stage-fat', 'stage-carb'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('stage-grams').value = '100';
+    selectedBaseFood = null;
+}
+
     </script>
 </body>
 </html>
