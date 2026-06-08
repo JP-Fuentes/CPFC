@@ -135,7 +135,6 @@
                 <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg>
                 <span class="text-[10px] md:text-sm font-bold">Coach</span>
             </button>
-            <!-- STATS TAB NOW HOLDS HISTORY TOO -->
             <button onclick="switchTab('analytics')" class="nav-btn flex flex-col md:flex-row items-center gap-1 md:gap-4 p-2 md:p-3.5 rounded-xl w-full md:justify-start" data-target="analytics">
                 <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m19 9-5 5-4-4-3 3"/></svg>
                 <span class="text-[10px] md:text-sm font-bold">Stats</span>
@@ -283,7 +282,7 @@
                             </div>
                         </div>
 
-                        <!-- Metrics Log (Simplified to just Weight) -->
+                        <!-- Metrics Log -->
                         <div class="card p-6 flex-1 flex flex-col justify-between relative overflow-hidden">
                             <div class="absolute -bottom-24 -left-24 w-64 h-64 bg-emerald-500/10 rounded-full blur-[80px] pointer-events-none"></div>
                             
@@ -401,8 +400,8 @@
 
                             <!-- CHAT CALCULATION MODE -->
                             <div id="chat-entry-container" class="space-y-4 hidden">
-                                <p class="text-xs text-indigo-200/70 font-medium">Type your meal specifics. The AI strictly calculates based on raw/cooked fitness tracking standards.</p>
-                                <textarea id="chat-calc-input" class="w-full bg-black/60 border border-white/10 rounded-xl p-4 text-white font-medium text-sm h-28 resize-none" placeholder="e.g. 200g cooked chicken breast, 1 cup white rice, and 2 boiled eggs"></textarea>
+                                <p class="text-xs text-indigo-200/70 font-medium">Paste your exact meal prompt. The AI calculates based on raw/cooked fitness tracking standards and adds the sum to the builder.</p>
+                                <textarea id="chat-calc-input" class="w-full bg-black/60 border border-white/10 rounded-xl p-4 text-white font-medium text-sm h-32 resize-none" placeholder="e.g. First meal Breakfast: Oatmeal 40g, Milk 120g, Peanut Butter 8g, 2 sachets of Equal, 1 scoop of Protein shake athlene buko pandan."></textarea>
                                 <button onclick="processChatCalculation(event)" class="w-full py-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-sm font-black transition-all flex items-center justify-center gap-2">
                                     ✨ Calculate Macros
                                 </button>
@@ -671,7 +670,6 @@
             historyLogs: JSON.parse(localStorage.getItem('cpfcHistoryLogs')) || [] 
         };
 
-        // Upgraded the local database to match typical bodybuilding/strict diets
         const localPHDatabase = [
             { id: 101, name: "Chicken Breast, cooked", cal: 165, pro: 31, fat: 3.6, carb: 0 },
             { id: 102, name: "White Rice, cooked", cal: 130, pro: 2.7, fat: 0.3, carb: 28 },
@@ -890,7 +888,7 @@
             }
         }
 
-        /* --- QUICK CHAT CALCULATION (UPDATED LOGIC) --- */
+        /* --- QUICK CHAT CALCULATION (BULLETPROOF PARSING) --- */
         async function processChatCalculation(event) {
             const input = document.getElementById('chat-calc-input').value.trim();
             if(!input) return showModal("Missing Info", "Please type what you ate.");
@@ -902,16 +900,22 @@
             btn.innerHTML = `<div class="spinner border-2 border-white border-t-transparent rounded-full w-5 h-5"></div> Processing...`;
             btn.disabled = true;
 
-            // UPDATED STRICT PROMPT LOGIC
-            const prompt = `You are a strict sports nutrition expert. The user ate: "${input}". 
-            Calculate the exact total nutritional value. Base your logic on accurate, raw/cooked ingredient weights typically used in bodybuilding and strict meal prepping (e.g., chicken breast, rice, eggs, beef).
-            Return ONLY a raw JSON object (no markdown, no quotes) with these exact keys:
-            "name" (A short 2-4 word summary of the meal), "cal" (number), "pro" (number), "fat" (number), "carb" (number).`;
+            // BULLETPROOF PROMPT: Forces AI to wrap the data in ||| so we can safely extract it.
+            const prompt = `You are an elite sports nutrition AI. Calculate the exact total macros for this specific meal: "${input}".
+            Context: Philippine and general bodybuilding foods (e.g. Athlene Whey, Equal sweetener is 0 cal).
+            Step 1: Identify every single ingredient and calculate its macros accurately based on standard fitness sizes.
+            Step 2: SUM up ALL ingredients into ONE single total.
+            Step 3: You MUST return the final summed data wrapped EXACTLY in triple pipes at the very end of your response like this:
+            |||{"name":"Short Meal Name","cal":100,"pro":20,"fat":5,"carb":10}|||`;
 
             try {
                 const text = await callGeminiAPI([{ role: "user", parts: [{ text: prompt }] }], apiKey);
-                let cleanText = text.replace(/```json/gi, '').replace(/```/g, '').trim(); 
-                const foodData = JSON.parse(cleanText);
+                
+                // Regex hunts exclusively for the ||| wrapper, ignoring Gemini's conversational text.
+                const match = text.match(/\|\|\|(.*?)\|\|\|/s);
+                if (!match) throw new Error("Format extraction failed");
+
+                const foodData = JSON.parse(match[1].trim());
 
                 state.currentMeal.push({ id: Date.now(), name: foodData.name, grams: 1, cal: foodData.cal, pro: foodData.pro, fat: foodData.fat, carb: foodData.carb });
                 localStorage.setItem('cpfcDraftMeal', JSON.stringify(state.currentMeal));
@@ -920,7 +924,8 @@
                 document.getElementById('chat-calc-input').value = '';
                 showSysToast("Added!", `${foodData.name} added to builder.`);
             } catch (e) {
-                showModal("Error", "Could not calculate. Please try being more specific.");
+                // Changed error message to blame the AI format, not the user's prompt.
+                showModal("AI Formatting Error", "The AI failed to format the response properly. Please try clicking Calculate again.");
             } finally {
                 btn.innerHTML = `✨ Calculate Macros`;
                 btn.disabled = false;
@@ -987,14 +992,12 @@
             document.getElementById('search-dropdown').classList.add('hidden');
             document.getElementById('food-search').value = '';
             
-            // Ensure we are in standard mode to see it
             document.getElementById('log-entry-mode').value = 'standard';
             toggleLogMode();
             
             document.getElementById('stage-name').value = food.name;
             document.getElementById('stage-grams').value = 100;
             
-            // Force offline mode temporarily to show values
             if(!document.getElementById('offline-toggle').checked) {
                 document.getElementById('offline-toggle').checked = true;
                 toggleOnlineMode();
@@ -1031,12 +1034,19 @@
                 document.getElementById('stage-cal').value = "...";
                 showSysToast("AI Activating", "Fetching accurate data...");
                 try {
-                    const prompt = `Calculate the nutritional value for exactly ${grams}g of: "${name}". Context: Precise fitness tracking. Return ONLY valid JSON format: {"cal":num,"pro":num,"fat":num,"carb":num}`;
+                    // Applied the same bulletproof wrapper here
+                    const prompt = `Calculate the nutritional value for exactly ${grams}g of: "${name}". Context: Precise fitness tracking.
+                    You MUST return the data wrapped in triple pipes like this:
+                    |||{"cal":100,"pro":20,"fat":5,"carb":10}|||`;
+                    
                     const text = await callGeminiAPI([{ role: "user", parts: [{ text: prompt }] }], localStorage.getItem('geminiApiKey'));
-                    const foodData = JSON.parse(text.replace(/```json/gi, '').replace(/```/g, '').trim());
+                    const match = text.match(/\|\|\|(.*?)\|\|\|/s);
+                    if (!match) throw new Error("Format extraction failed");
+                    
+                    const foodData = JSON.parse(match[1].trim());
                     cal = foodData.cal; pro = foodData.pro; fat = foodData.fat; carb = foodData.carb;
                 } catch(e) {
-                    return showModal("AI Error", "Could not calculate. Switch to Manual Offline mode to log.");
+                    return showModal("AI Error", "Could not format AI response. Switch to Manual Offline mode to log, or try again.");
                 }
             }
 
@@ -1160,7 +1170,6 @@
         function logMetrics() {
             const weight = parseFloat(document.getElementById('metric-weight').value);
             if (!weight) return;
-            // Sending bodyFat as 0 to keep backend structure intact
             sendToBackend(null, [{ weight: weight, bodyFat: 0 }]);
             document.getElementById('metric-weight').value = '';
             showSysToast("Weight Saved", `Logged ${weight}kg to cloud.`);
@@ -1168,7 +1177,7 @@
         }
 
         /* ========================
-           AI COACH VISION CHAT (UPDATED LOGIC)
+           AI COACH VISION CHAT 
            ======================== */
         let chatBase64Image = null;
         let chatMimeType = null;
@@ -1217,9 +1226,8 @@
             input.value = '';
             chatBox.scrollTop = chatBox.scrollHeight;
 
-            // UPDATED STRICT PROMPT LOGIC
             const context = `You are an elite AI Nutrition Coach. The user tracks their macros strictly. 
-            If they upload a photo or describe a meal, analyze the ingredients accurately based on standard fitness portion sizes (e.g., 150g cooked rice, 200g chicken, etc.).
+            If they upload a photo or describe a meal, analyze the ingredients accurately based on standard fitness portion sizes.
             Reply conversationally and professionally. 
             CRITICAL: If you estimate macros for a meal in this chat, you MUST append this EXACT format at the very end of your reply so the system can parse it:
             |||{"name":"Your Meal Name","cal":num,"pro":num,"fat":num,"carb":num}|||`;
