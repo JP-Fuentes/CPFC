@@ -282,7 +282,7 @@
                             </div>
                         </div>
 
-                        <!-- Metrics Log -->
+                        <!-- Metrics Log (RESTORED BODY FAT) -->
                         <div class="card p-6 flex-1 flex flex-col justify-between relative overflow-hidden">
                             <div class="absolute -bottom-24 -left-24 w-64 h-64 bg-emerald-500/10 rounded-full blur-[80px] pointer-events-none"></div>
                             
@@ -291,12 +291,13 @@
                                     <div class="h-10 w-10 rounded-xl bg-emerald-500/15 flex items-center justify-center text-emerald-400 border border-emerald-500/30">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 5h-2V3H7v2H5c-1.1 0-2 .9-2 2v1c0 2.55 1.92 4.63 4.39 4.94A5.01 5.01 0 0 0 12 15a5.01 5.01 0 0 0 4.61-2.06C19.08 12.63 21 10.55 21 8V7c0-1.1-.9-2-2-2Z"/><path d="M12 15v7"/><path d="M8 22h8"/></svg>
                                     </div>
-                                    <h3 class="text-sm font-black text-white uppercase tracking-wider">Morning Weight</h3>
+                                    <h3 class="text-sm font-black text-white uppercase tracking-wider">Morning Metrics</h3>
                                 </div>
                             </div>
                             
                             <div class="flex gap-2 relative z-10">
-                                <input type="number" id="metric-weight" class="w-full bg-black/60 rounded-xl px-3 py-3 border border-white/10 text-sm font-bold" placeholder="Current Weight (kg)" step="0.1">
+                                <input type="number" id="metric-weight" class="w-full bg-black/60 rounded-xl px-3 py-3 border border-white/10 text-sm font-bold focus:border-emerald-500" placeholder="Weight (kg)" step="0.1">
+                                <input type="number" id="metric-bf" class="w-full bg-black/60 rounded-xl px-3 py-3 border border-white/10 text-sm font-bold focus:border-emerald-500" placeholder="Body Fat %" step="0.1">
                             </div>
                             <button onclick="logMetrics()" class="w-full mt-3 py-3 bg-white text-black hover:bg-zinc-200 active:scale-[0.98] transition-all text-xs font-black rounded-xl relative z-10">
                                 Save Log
@@ -416,9 +417,15 @@
 
                         <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6 relative z-10 shrink-0">
                             <h2 class="text-sm font-black text-white/50 uppercase tracking-[0.2em]">Meal Builder</h2>
-                            <button onclick="saveAsRecipe()" class="text-[10px] uppercase tracking-widest px-4 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 text-white font-bold rounded-lg transition-colors flex items-center gap-2">
-                                Save Recipe
-                            </button>
+                            <div class="flex gap-2">
+                                <!-- RESTORED RECIPE LOADER -->
+                                <select id="recipe-loader" onchange="loadRecipe()" class="text-[10px] uppercase tracking-widest px-3 py-2 bg-indigo-600/20 hover:bg-indigo-600/40 border border-indigo-500/30 text-indigo-300 font-bold rounded-lg transition-colors outline-none cursor-pointer appearance-none text-center">
+                                    <option value="" disabled selected>Load Recipe</option>
+                                </select>
+                                <button onclick="saveAsRecipe()" class="text-[10px] uppercase tracking-widest px-4 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 text-white font-bold rounded-lg transition-colors flex items-center gap-2">
+                                    Save Recipe
+                                </button>
+                            </div>
                         </div>
 
                         <div id="meal-list" class="flex-1 space-y-4 mb-6 relative z-10 max-h-[35vh] overflow-y-auto pr-2 pb-2 scroll-smooth text-center text-sm font-medium text-zinc-600 py-10">
@@ -623,7 +630,7 @@
     </div>
 
     <!-- Modals & Toasts -->
-    <div id="scanner-modal" class="fixed inset-0 bg-black/95 z-[9999] hidden flex flex-col items-center justify-center p-4">
+    <div id="scanner-modal" class="fixed inset-0 bg-black/95 z-[9999] hidden flex-col items-center justify-center p-4">
         <h3 class="text-xl font-black text-white mb-6">Scan Barcode</h3>
         <div id="reader" class="w-full max-w-sm mb-6 aspect-square bg-black shadow-lg"></div>
         <button onclick="closeScanner()" class="px-8 py-3 bg-red-600 text-white font-bold rounded-xl active:scale-95 transition-all">Cancel</button>
@@ -687,6 +694,7 @@
         let pendingLogBackup = null; 
         let globalShiftDateStr = "";
         let searchTimeout = null;
+        let html5QrcodeScanner = null;
 
         /* ========================
            INITIALIZATION
@@ -700,6 +708,7 @@
             toggleOnlineMode();
             renderDashboard();
             renderMealList();
+            populateRecipes(); // Restored recipe UI
             renderAnalytics();
             updateSyncUI();
             
@@ -790,6 +799,16 @@
             setTimeout(() => { toast.classList.add('side-toast-enter'); }, 10);
             clearTimeout(sysToastTimer);
             sysToastTimer = setTimeout(() => { toast.classList.remove('side-toast-enter'); }, 4000);
+        }
+
+        /* --- BULLETPROOF AI DATA EXTRACTOR --- */
+        // This function forces the code to ignore any formatting tags Gemini throws in.
+        function parseAIResponse(text) {
+            const match = text.match(/\|\|\|(.*?)\|\|\|/s);
+            if (!match) throw new Error("Format extraction failed");
+            // Strip out markdown if Gemini decided to add ```json ... ``` inside the pipes
+            let cleanJSONStr = match[1].replace(/```json/gi, '').replace(/```/g, '').trim();
+            return JSON.parse(cleanJSONStr);
         }
 
         /* --- GEMINI API ENGINE --- */
@@ -888,7 +907,7 @@
             }
         }
 
-        /* --- QUICK CHAT CALCULATION (BULLETPROOF PARSING) --- */
+        /* --- QUICK CHAT CALCULATION --- */
         async function processChatCalculation(event) {
             const input = document.getElementById('chat-calc-input').value.trim();
             if(!input) return showModal("Missing Info", "Please type what you ate.");
@@ -900,7 +919,6 @@
             btn.innerHTML = `<div class="spinner border-2 border-white border-t-transparent rounded-full w-5 h-5"></div> Processing...`;
             btn.disabled = true;
 
-            // BULLETPROOF PROMPT: Forces AI to wrap the data in ||| so we can safely extract it.
             const prompt = `You are an elite sports nutrition AI. Calculate the exact total macros for this specific meal: "${input}".
             Context: Philippine and general bodybuilding foods (e.g. Athlene Whey, Equal sweetener is 0 cal).
             Step 1: Identify every single ingredient and calculate its macros accurately based on standard fitness sizes.
@@ -910,12 +928,7 @@
 
             try {
                 const text = await callGeminiAPI([{ role: "user", parts: [{ text: prompt }] }], apiKey);
-                
-                // Regex hunts exclusively for the ||| wrapper, ignoring Gemini's conversational text.
-                const match = text.match(/\|\|\|(.*?)\|\|\|/s);
-                if (!match) throw new Error("Format extraction failed");
-
-                const foodData = JSON.parse(match[1].trim());
+                const foodData = parseAIResponse(text); // Using bulletproof extractor
 
                 state.currentMeal.push({ id: Date.now(), name: foodData.name, grams: 1, cal: foodData.cal, pro: foodData.pro, fat: foodData.fat, carb: foodData.carb });
                 localStorage.setItem('cpfcDraftMeal', JSON.stringify(state.currentMeal));
@@ -924,13 +937,48 @@
                 document.getElementById('chat-calc-input').value = '';
                 showSysToast("Added!", `${foodData.name} added to builder.`);
             } catch (e) {
-                // Changed error message to blame the AI format, not the user's prompt.
                 showModal("AI Formatting Error", "The AI failed to format the response properly. Please try clicking Calculate again.");
             } finally {
                 btn.innerHTML = `✨ Calculate Macros`;
                 btn.disabled = false;
             }
         }
+
+        /* --- BARCODE SCANNER --- */
+        function openScanner() {
+            const modal = document.getElementById('scanner-modal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            
+            if(!html5QrcodeScanner) {
+                html5QrcodeScanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: {width: 250, height: 250} }, false);
+            }
+            html5QrcodeScanner.render(onScanSuccess, onScanFailure);
+        }
+
+        function closeScanner() {
+            const modal = document.getElementById('scanner-modal');
+            if (html5QrcodeScanner) {
+                html5QrcodeScanner.clear().then(() => {
+                    modal.classList.add('hidden');
+                    modal.classList.remove('flex');
+                }).catch(error => {
+                    modal.classList.add('hidden');
+                    modal.classList.remove('flex');
+                });
+            } else {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }
+        }
+
+        function onScanSuccess(decodedText, decodedResult) {
+            closeScanner();
+            document.getElementById('food-search').value = decodedText;
+            forceAISearch(decodedText); 
+        }
+
+        function onScanFailure(error) {}
 
         /* --- SMART SEARCH --- */
         function debounceSearch() {
@@ -987,6 +1035,35 @@
             dropdown.innerHTML = searchHtml;
         }
 
+        async function forceAISearch(overrideQuery = null) {
+            const query = overrideQuery || document.getElementById('food-search').value;
+            if(!query) return showModal("Empty Search", "Type a food name or scan a barcode first.");
+            const apiKey = localStorage.getItem('geminiApiKey');
+            if(!apiKey) return showModal("API Key Required", "Please add your Gemini Key in Config.");
+
+            document.getElementById('search-dropdown').classList.remove('hidden');
+            document.getElementById('search-dropdown').innerHTML = `<div class="p-5 text-sm font-bold text-indigo-400 text-center animate-pulse">AI is estimating "${query}"...</div>`;
+
+            const prompt = `You are a sports nutrition database. The user searched for or scanned: "${query}". Provide the standard nutritional values for 100g of this item.
+            You MUST return ONLY a JSON object wrapped in triple pipes like this:
+            |||{"name":"Food Name","cal":100,"pro":20,"fat":5,"carb":10}|||`;
+
+            try {
+                const text = await callGeminiAPI([{ role: "user", parts: [{ text: prompt }] }], apiKey);
+                const f = parseAIResponse(text);
+                
+                const searchHtml = `
+                    <div class="bg-purple-900/50 px-4 py-1.5 text-[10px] font-black tracking-widest uppercase text-purple-300">AI Estimate (per 100g)</div>
+                    <div onclick='stageFood(${JSON.stringify(f)})' class="p-4 hover:bg-white/10 cursor-pointer border-b border-white/5">
+                        <div class="text-sm font-bold text-white mb-1.5 font-brand">${f.name}</div>
+                        <div class="text-[11px] font-bold text-purple-300 uppercase tracking-widest">${f.cal} kcal | ${f.pro}P | ${f.fat}F | ${f.carb}C</div>
+                    </div>`;
+                document.getElementById('search-dropdown').innerHTML = searchHtml;
+            } catch (e) {
+                document.getElementById('search-dropdown').innerHTML = `<div class="p-5 text-sm font-bold text-red-400 text-center">AI could not process this item. Try standard entry.</div>`;
+            }
+        }
+
         function stageFood(food) {
             selectedBaseFood = food; 
             document.getElementById('search-dropdown').classList.add('hidden');
@@ -1034,16 +1111,13 @@
                 document.getElementById('stage-cal').value = "...";
                 showSysToast("AI Activating", "Fetching accurate data...");
                 try {
-                    // Applied the same bulletproof wrapper here
                     const prompt = `Calculate the nutritional value for exactly ${grams}g of: "${name}". Context: Precise fitness tracking.
                     You MUST return the data wrapped in triple pipes like this:
                     |||{"cal":100,"pro":20,"fat":5,"carb":10}|||`;
                     
                     const text = await callGeminiAPI([{ role: "user", parts: [{ text: prompt }] }], localStorage.getItem('geminiApiKey'));
-                    const match = text.match(/\|\|\|(.*?)\|\|\|/s);
-                    if (!match) throw new Error("Format extraction failed");
-                    
-                    const foodData = JSON.parse(match[1].trim());
+                    const foodData = parseAIResponse(text);
+
                     cal = foodData.cal; pro = foodData.pro; fat = foodData.fat; carb = foodData.carb;
                 } catch(e) {
                     return showModal("AI Error", "Could not format AI response. Switch to Manual Offline mode to log, or try again.");
@@ -1101,6 +1175,51 @@
             list.scrollTop = list.scrollHeight;
         }
 
+        /* --- RECIPES --- */
+        function saveAsRecipe() {
+            if(state.currentMeal.length === 0) return showModal("Empty Builder", "Add some ingredients to the builder before saving as a recipe.");
+            
+            const recipeName = prompt("Enter a name for this recipe (e.g., 'Morning Shake'):");
+            if(!recipeName) return;
+
+            let tCal = 0, tPro = 0, tFat = 0, tCarb = 0;
+            state.currentMeal.forEach(item => { tCal += item.cal; tPro += item.pro; tFat += item.fat; tCarb += item.carb; });
+
+            const newRecipe = {
+                id: Date.now(), name: recipeName, cal: tCal, pro: tPro, fat: tFat, carb: tCarb,
+                items: JSON.parse(JSON.stringify(state.currentMeal))
+            };
+
+            state.recipes.push(newRecipe);
+            localStorage.setItem('savedRecipes', JSON.stringify(state.recipes));
+            populateRecipes();
+            showSysToast("Recipe Saved", `${recipeName} has been saved.`);
+        }
+
+        function populateRecipes() {
+            const loader = document.getElementById('recipe-loader');
+            if(!loader) return;
+            let html = '<option value="" disabled selected>Load Recipe</option>';
+            state.recipes.forEach(r => {
+                html += `<option value="${r.id}">${r.name} (${r.cal.toFixed(0)} kcal)</option>`;
+            });
+            loader.innerHTML = html;
+        }
+
+        function loadRecipe() {
+            const id = document.getElementById('recipe-loader').value;
+            const recipe = state.recipes.find(r => r.id == id);
+            if(recipe && recipe.items) {
+                recipe.items.forEach(item => {
+                    state.currentMeal.push({ ...item, id: Date.now() + Math.random() });
+                });
+                localStorage.setItem('cpfcDraftMeal', JSON.stringify(state.currentMeal));
+                renderMealList();
+                showSysToast("Recipe Loaded", `${recipe.name} added to builder.`);
+            }
+            document.getElementById('recipe-loader').value = ""; // reset dropdown
+        }
+
         /* --- LOGGING & UNDO --- */
         function triggerSubmitWithUndo() {
             if(state.currentMeal.length === 0) return showModal("Empty Meal", "Add items before logging.");
@@ -1115,10 +1234,8 @@
             state.weeklyData[todayIdx] = state.today.cal;
 
             state.historyLogs.unshift({
-                date: new Date().toLocaleDateString(),
-                time: new Date().toLocaleTimeString(),
-                items: [...state.currentMeal],
-                totalCal: tCal
+                date: new Date().toLocaleDateString(), time: new Date().toLocaleTimeString(),
+                items: [...state.currentMeal], totalCal: tCal
             });
 
             saveStateToLocal();
@@ -1168,11 +1285,17 @@
         }
 
         function logMetrics() {
-            const weight = parseFloat(document.getElementById('metric-weight').value);
-            if (!weight) return;
-            sendToBackend(null, [{ weight: weight, bodyFat: 0 }]);
+            const weight = parseFloat(document.getElementById('metric-weight').value) || 0;
+            const bf = parseFloat(document.getElementById('metric-bf').value) || 0;
+            
+            if (!weight && !bf) return showModal("Missing Info", "Please enter your weight or body fat.");
+            
+            sendToBackend(null, [{ weight: weight, bodyFat: bf }]);
+            
             document.getElementById('metric-weight').value = '';
-            showSysToast("Weight Saved", `Logged ${weight}kg to cloud.`);
+            document.getElementById('metric-bf').value = '';
+            
+            showSysToast("Metrics Saved", `Logged to cloud.`);
             setTimeout(() => syncHistoryFromCloud(false), 2000);
         }
 
@@ -1248,7 +1371,11 @@
                 const match = reply.match(/\|\|\|(.*?)\|\|\|/s);
                 if (match) {
                     displayReply = reply.replace(match[0], '').trim();
-                    try { payload = JSON.parse(match[1]); } catch(e){}
+                    try { 
+                        // Force clean the JSON from markdown
+                        let raw = match[1].replace(/```json/gi, '').replace(/```/g, '').trim();
+                        payload = JSON.parse(raw); 
+                    } catch(e) { console.log("AI format error", e); }
                 }
 
                 let replyHTML = `
@@ -1320,7 +1447,7 @@
                 historyContainer.innerHTML = `<p class="text-zinc-500 text-sm">No recent logs found.</p>`;
             } else {
                 state.historyLogs.forEach(log => {
-                    const itemsList = log.items.map(i => `<div class="text-[11px] text-zinc-400">• ${i.name} (${i.cal} kcal)</div>`).join('');
+                    const itemsList = log.items.map(i => `<div class="text-[11px] text-zinc-400">• ${i.name} (${i.cal.toFixed(0)} kcal)</div>`).join('');
                     historyContainer.innerHTML += `
                     <div class="bg-black/40 border border-white/5 p-4 rounded-xl">
                         <div class="flex justify-between items-center mb-2">
@@ -1415,6 +1542,23 @@
 
                 if (data.metrics && Array.isArray(data.metrics)) state.weightHistory = data.metrics.map(m => parseFloat(m[2])).filter(w => w > 0);
                 
+                // NEW: Actually Update Front-End from Profile
+                if (data.profile) {
+                    if (data.profile.goals) {
+                        state.goals = data.profile.goals;
+                        localStorage.setItem('cpfcGoals', JSON.stringify(state.goals));
+                        document.getElementById('goal-cal').value = state.goals.cal;
+                        document.getElementById('goal-pro').value = state.goals.pro;
+                        document.getElementById('goal-fat').value = state.goals.fat;
+                        document.getElementById('goal-carb').value = state.goals.carb;
+                    }
+                    if (data.profile.mode) {
+                        state.dayMode = data.profile.mode;
+                        localStorage.setItem('cpfcDayMode', state.dayMode);
+                        document.getElementById('day-mode-select').value = state.dayMode;
+                    }
+                }
+
                 renderDashboard(); renderAnalytics(); updateSyncUI();
                 if (showFeedback) showSysToast("Sync Successful", "Local data updated from the cloud.");
             } catch (err) { updateSyncUI(); }
