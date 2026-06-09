@@ -282,7 +282,7 @@
                             </div>
                         </div>
 
-                        <!-- Metrics Log (RESTORED BODY FAT) -->
+                        <!-- Metrics Log -->
                         <div class="card p-6 flex-1 flex flex-col justify-between relative overflow-hidden">
                             <div class="absolute -bottom-24 -left-24 w-64 h-64 bg-emerald-500/10 rounded-full blur-[80px] pointer-events-none"></div>
                             
@@ -418,11 +418,10 @@
                         <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6 relative z-10 shrink-0">
                             <h2 class="text-sm font-black text-white/50 uppercase tracking-[0.2em]">Meal Builder</h2>
                             <div class="flex gap-2">
-                                <!-- RESTORED RECIPE LOADER -->
                                 <select id="recipe-loader" onchange="loadRecipe()" class="text-[10px] uppercase tracking-widest px-3 py-2 bg-indigo-600/20 hover:bg-indigo-600/40 border border-indigo-500/30 text-indigo-300 font-bold rounded-lg transition-colors outline-none cursor-pointer appearance-none text-center">
                                     <option value="" disabled selected>Load Recipe</option>
                                 </select>
-                                <button onclick="saveAsRecipe()" class="text-[10px] uppercase tracking-widest px-4 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 text-white font-bold rounded-lg transition-colors flex items-center gap-2">
+                                <button onclick="openRecipeModal()" class="text-[10px] uppercase tracking-widest px-4 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 text-white font-bold rounded-lg transition-colors flex items-center gap-2">
                                     Save Recipe
                                 </button>
                             </div>
@@ -636,11 +635,25 @@
         <button onclick="closeScanner()" class="px-8 py-3 bg-red-600 text-white font-bold rounded-xl active:scale-95 transition-all">Cancel</button>
     </div>
 
+    <!-- General Error/Alert Modal -->
     <div id="custom-modal" class="fixed inset-0 bg-black/90 z-[9999] hidden flex items-center justify-center p-4">
         <div class="card p-8 w-full max-w-sm text-center transform scale-95 transition-transform" id="modal-content">
-            <h3 id="modal-title" class="text-xl font-black mb-3 text-white tracking-tight">Message</h3>
-            <p id="modal-msg" class="mb-8 text-zinc-400 text-sm font-medium leading-relaxed">Description</p>
+            <h3 id="modal-title" class="text-xl font-black mb-3 text-red-400 tracking-tight">Message</h3>
+            <p id="modal-msg" class="mb-8 text-zinc-300 text-sm font-medium leading-relaxed max-h-40 overflow-y-auto">Description</p>
             <button onclick="closeModal()" class="w-full py-4 bg-white text-black font-black rounded-xl active:scale-95 transition-all">Understood</button>
+        </div>
+    </div>
+
+    <!-- Recipe Prompt Modal -->
+    <div id="recipe-prompt-modal" class="fixed inset-0 bg-black/90 z-[9999] hidden flex items-center justify-center p-4">
+        <div class="card p-8 w-full max-w-sm text-center transform scale-95 transition-transform" id="recipe-prompt-content">
+            <h3 class="text-xl font-black mb-3 text-white tracking-tight">Save Recipe</h3>
+            <p class="text-xs text-zinc-400 mb-4">Give your current builder a name to reuse it later.</p>
+            <input type="text" id="recipe-name-input" class="w-full bg-black/60 border border-white/10 rounded-xl px-4 py-3 text-sm text-white font-bold focus:border-indigo-500 mb-6" placeholder="e.g., Morning Shake">
+            <div class="flex gap-3">
+                <button onclick="closeRecipeModal()" class="w-full py-3 bg-zinc-800 text-white font-black rounded-xl active:scale-95 transition-all">Cancel</button>
+                <button onclick="confirmSaveRecipe()" class="w-full py-3 bg-indigo-600 text-white font-black rounded-xl active:scale-95 transition-all">Save</button>
+            </div>
         </div>
     </div>
 
@@ -695,6 +708,7 @@
         let globalShiftDateStr = "";
         let searchTimeout = null;
         let html5QrcodeScanner = null;
+        let apiKey = ""; // Used for Canvas injected API key fallback if needed.
 
         /* ========================
            INITIALIZATION
@@ -708,7 +722,7 @@
             toggleOnlineMode();
             renderDashboard();
             renderMealList();
-            populateRecipes(); // Restored recipe UI
+            populateRecipes(); 
             renderAnalytics();
             updateSyncUI();
             
@@ -801,28 +815,58 @@
             sysToastTimer = setTimeout(() => { toast.classList.remove('side-toast-enter'); }, 4000);
         }
 
-        /* --- BULLETPROOF AI DATA EXTRACTOR --- */
-        // This function forces the code to ignore any formatting tags Gemini throws in.
-        function parseAIResponse(text) {
-            const match = text.match(/\|\|\|(.*?)\|\|\|/s);
-            if (!match) throw new Error("Format extraction failed");
-            // Strip out markdown if Gemini decided to add ```json ... ``` inside the pipes
-            let cleanJSONStr = match[1].replace(/```json/gi, '').replace(/```/g, '').trim();
-            return JSON.parse(cleanJSONStr);
+        /* --- BULLETPROOF AI EXTRACTOR & API ENGINE --- */
+        
+        function safeParseJSON(text) {
+            try {
+                // First try standard parse (in case responseMimeType worked perfectly)
+                return JSON.parse(text);
+            } catch (e) {
+                // Fallback: Model hallucinated conversational text/markdown. Extract exact JSON structure.
+                const match = text.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
+                if (match) {
+                    try {
+                        return JSON.parse(match[0]);
+                    } catch (e2) {
+                        throw new Error("AI returned malformed structure. " + e2.message);
+                    }
+                }
+                throw new Error("AI did not return any JSON objects.");
+            }
         }
 
-        /* --- GEMINI API ENGINE --- */
-        async function callGeminiAPI(contents, apiKey) {
-            const model = "gemini-1.5-flash";
+        async function callGeminiAPI(contents, userApiKey, isJson = false) {
+            // Environment Key takes precedence in Preview, otherwise use local config
+            const finalKey = apiKey || userApiKey;
+            if(!finalKey) throw new Error("API Key is missing. Please paste your key in the Config tab.");
+
+            // Standardize model to latest version
+            const model = "gemini-2.5-flash-preview-09-2025"; 
+            
+            const payload = { contents: contents };
+            if (isJson) {
+                // Enforce JSON return type
+                payload.generationConfig = { responseMimeType: "application/json" };
+            }
+
             try {
-                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
+                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${finalKey}`, {
                     method: "POST", headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ contents: contents })
+                    body: JSON.stringify(payload)
                 });
                 const data = await res.json();
-                if (res.ok) return data.candidates[0].content.parts[0].text;
-                throw new Error(data.error?.message || "API Error");
-            } catch (err) { throw err; }
+                
+                if (!res.ok) {
+                    throw new Error(data.error?.message || `HTTP ${res.status} Error`);
+                }
+                
+                if (data.candidates && data.candidates[0].content.parts[0].text) {
+                    return data.candidates[0].content.parts[0].text;
+                }
+                throw new Error("Empty response from AI");
+            } catch (err) {
+                throw err;
+            }
         }
 
         /* ========================
@@ -834,24 +878,25 @@
             const height = document.getElementById('ai-height').value;
             const goal = document.getElementById('ai-goal').value;
 
-            const apiKey = localStorage.getItem('geminiApiKey');
+            const storedKey = localStorage.getItem('geminiApiKey');
             
             if(!age || !weight || !height) return showModal("Input Required", "Please fill out your Age, Weight, and Height.");
-            if(!apiKey) return showModal("API Key Required", "Please paste your Gemini API Key in the config section below first.");
-
+            
             const btn = event.currentTarget;
+            const originalText = btn.innerHTML;
             btn.innerHTML = `<div class="spinner border-2 border-white border-t-transparent rounded-full w-4 h-4 inline-block mr-2"></div> Calculating...`;
             btn.disabled = true;
 
             const prompt = `You are an elite fitness architect. The user provided these stats: Age: ${age}, Weight: ${weight}kg, Height: ${height}, Goal: ${goal}. 
             Calculate their TDEE and safe macro goals. 
             CRUCIAL RULE: Formulate a safe caloric plan that prioritizes skin elasticity. High protein is required.
-            Return ONLY a raw JSON object with these exact keys: "cal" (number), "pro" (number), "fat" (number), "carb" (number).`;
+            Return ONLY a raw JSON object with these exact keys: "cal" (number), "pro" (number), "fat" (number), "carb" (number). Do not include any other text.`;
 
             try {
-                const text = await callGeminiAPI([{ role: "user", parts: [{ text: prompt }] }], apiKey);
-                let cleanText = text.replace(/```json/gi, '').replace(/```/g, '').trim(); 
-                const newMacros = JSON.parse(cleanText);
+                const text = await callGeminiAPI([{ role: "user", parts: [{ text: prompt }] }], storedKey, true);
+                const newMacros = safeParseJSON(text);
+
+                if (!newMacros.cal || !newMacros.pro) throw new Error("AI returned an incomplete JSON format.");
 
                 document.getElementById('goal-cal').value = newMacros.cal;
                 document.getElementById('goal-pro').value = newMacros.pro;
@@ -859,11 +904,11 @@
                 document.getElementById('goal-carb').value = newMacros.carb;
                 
                 saveSettings();
-                showSysToast("Setup Complete", `Macros set to: ${newMacros.cal} kcal.`);
+                showSysToast("Setup Complete", `Macros safely set to: ${newMacros.cal} kcal.`);
             } catch (e) {
-                showModal("Error", "Could not generate macros. Try rephrasing your stats.");
+                showModal("Calculation Error", "Failed to generate macros. Reason: \n\n" + e.message);
             } finally {
-                btn.innerHTML = "Calculate & Set Targets";
+                btn.innerHTML = originalText;
                 btn.disabled = false;
             }
         }
@@ -911,8 +956,7 @@
         async function processChatCalculation(event) {
             const input = document.getElementById('chat-calc-input').value.trim();
             if(!input) return showModal("Missing Info", "Please type what you ate.");
-            const apiKey = localStorage.getItem('geminiApiKey');
-            if(!apiKey) return showModal("API Key Required", "Please add your Gemini Key in Config.");
+            const storedKey = localStorage.getItem('geminiApiKey');
 
             showSysToast("AI Calculating...", "Estimating exact macros for your meal.");
             const btn = event.currentTarget;
@@ -923,12 +967,11 @@
             Context: Philippine and general bodybuilding foods (e.g. Athlene Whey, Equal sweetener is 0 cal).
             Step 1: Identify every single ingredient and calculate its macros accurately based on standard fitness sizes.
             Step 2: SUM up ALL ingredients into ONE single total.
-            Step 3: You MUST return the final summed data wrapped EXACTLY in triple pipes at the very end of your response like this:
-            |||{"name":"Short Meal Name","cal":100,"pro":20,"fat":5,"carb":10}|||`;
+            Step 3: Return ONLY a raw JSON object with this EXACT structure: {"name":"Short Meal Name","cal":100,"pro":20,"fat":5,"carb":10}`;
 
             try {
-                const text = await callGeminiAPI([{ role: "user", parts: [{ text: prompt }] }], apiKey);
-                const foodData = parseAIResponse(text); // Using bulletproof extractor
+                const text = await callGeminiAPI([{ role: "user", parts: [{ text: prompt }] }], storedKey, true);
+                const foodData = safeParseJSON(text);
 
                 state.currentMeal.push({ id: Date.now(), name: foodData.name, grams: 1, cal: foodData.cal, pro: foodData.pro, fat: foodData.fat, carb: foodData.carb });
                 localStorage.setItem('cpfcDraftMeal', JSON.stringify(state.currentMeal));
@@ -937,7 +980,7 @@
                 document.getElementById('chat-calc-input').value = '';
                 showSysToast("Added!", `${foodData.name} added to builder.`);
             } catch (e) {
-                showModal("AI Formatting Error", "The AI failed to format the response properly. Please try clicking Calculate again.");
+                showModal("AI Formatting Error", "Failed to parse AI output. Reason: \n\n" + e.message);
             } finally {
                 btn.innerHTML = `✨ Calculate Macros`;
                 btn.disabled = false;
@@ -989,7 +1032,7 @@
         async function handleSearch() {
             const query = document.getElementById('food-search').value.toLowerCase();
             const dropdown = document.getElementById('search-dropdown');
-            const apiKey = localStorage.getItem('usdaApiKey');
+            const storedKey = localStorage.getItem('usdaApiKey');
             if (query.length < 3) { dropdown.classList.add('hidden'); return; }
 
             dropdown.innerHTML = `<div class="p-5 text-sm font-bold text-indigo-400 text-center animate-pulse">Searching...</div>`;
@@ -1010,9 +1053,9 @@
                 `).join('');
             }
 
-            if(apiKey && navigator.onLine) {
+            if(storedKey && navigator.onLine) {
                 try {
-                    const response = await fetch(`https://api.nal.usda.gov/fdc/v1/foods/search?query=${query}&api_key=${apiKey}&pageSize=3`);
+                    const response = await fetch(`https://api.nal.usda.gov/fdc/v1/foods/search?query=${query}&api_key=${storedKey}&pageSize=3`);
                     const data = await response.json();
                     if(data.foods && data.foods.length > 0) {
                         foundResults = true;
@@ -1038,19 +1081,17 @@
         async function forceAISearch(overrideQuery = null) {
             const query = overrideQuery || document.getElementById('food-search').value;
             if(!query) return showModal("Empty Search", "Type a food name or scan a barcode first.");
-            const apiKey = localStorage.getItem('geminiApiKey');
-            if(!apiKey) return showModal("API Key Required", "Please add your Gemini Key in Config.");
+            const storedKey = localStorage.getItem('geminiApiKey');
 
             document.getElementById('search-dropdown').classList.remove('hidden');
             document.getElementById('search-dropdown').innerHTML = `<div class="p-5 text-sm font-bold text-indigo-400 text-center animate-pulse">AI is estimating "${query}"...</div>`;
 
             const prompt = `You are a sports nutrition database. The user searched for or scanned: "${query}". Provide the standard nutritional values for 100g of this item.
-            You MUST return ONLY a JSON object wrapped in triple pipes like this:
-            |||{"name":"Food Name","cal":100,"pro":20,"fat":5,"carb":10}|||`;
+            Return ONLY a JSON object exactly like this: {"name":"Food Name","cal":100,"pro":20,"fat":5,"carb":10}`;
 
             try {
-                const text = await callGeminiAPI([{ role: "user", parts: [{ text: prompt }] }], apiKey);
-                const f = parseAIResponse(text);
+                const text = await callGeminiAPI([{ role: "user", parts: [{ text: prompt }] }], storedKey, true);
+                const f = safeParseJSON(text);
                 
                 const searchHtml = `
                     <div class="bg-purple-900/50 px-4 py-1.5 text-[10px] font-black tracking-widest uppercase text-purple-300">AI Estimate (per 100g)</div>
@@ -1060,7 +1101,7 @@
                     </div>`;
                 document.getElementById('search-dropdown').innerHTML = searchHtml;
             } catch (e) {
-                document.getElementById('search-dropdown').innerHTML = `<div class="p-5 text-sm font-bold text-red-400 text-center">AI could not process this item. Try standard entry.</div>`;
+                document.getElementById('search-dropdown').innerHTML = `<div class="p-5 text-sm font-bold text-red-400 text-center">AI failed: ${e.message}</div>`;
             }
         }
 
@@ -1112,15 +1153,14 @@
                 showSysToast("AI Activating", "Fetching accurate data...");
                 try {
                     const prompt = `Calculate the nutritional value for exactly ${grams}g of: "${name}". Context: Precise fitness tracking.
-                    You MUST return the data wrapped in triple pipes like this:
-                    |||{"cal":100,"pro":20,"fat":5,"carb":10}|||`;
+                    Return ONLY a JSON object strictly like this: {"cal":100,"pro":20,"fat":5,"carb":10}`;
                     
-                    const text = await callGeminiAPI([{ role: "user", parts: [{ text: prompt }] }], localStorage.getItem('geminiApiKey'));
-                    const foodData = parseAIResponse(text);
+                    const text = await callGeminiAPI([{ role: "user", parts: [{ text: prompt }] }], localStorage.getItem('geminiApiKey'), true);
+                    const foodData = safeParseJSON(text);
 
-                    cal = foodData.cal; pro = foodData.pro; fat = foodData.fat; carb = foodData.carb;
+                    cal = foodData.cal || 0; pro = foodData.pro || 0; fat = foodData.fat || 0; carb = foodData.carb || 0;
                 } catch(e) {
-                    return showModal("AI Error", "Could not format AI response. Switch to Manual Offline mode to log, or try again.");
+                    return showModal("AI Error", "Failed to get AI output. Reason: \n" + e.message + "\n\nSwitch to Manual Offline mode to log, or try again.");
                 }
             }
 
@@ -1157,11 +1197,11 @@
                 tCal += item.cal; tPro += item.pro; tFat += item.fat; tCarb += item.carb;
                 list.innerHTML += `
                     <div class="flex justify-between items-center bg-black/40 p-4 rounded-xl border border-white/5">
-                        <div class="text-left">
-                            <p class="text-base font-bold text-white font-brand">${item.name}</p>
+                        <div class="text-left w-3/5 truncate pr-2">
+                            <p class="text-base font-bold text-white font-brand truncate">${item.name}</p>
                             <p class="text-[11px] font-bold uppercase tracking-widest text-indigo-300">${item.grams}g</p>
                         </div>
-                        <div class="flex items-center gap-4">
+                        <div class="flex items-center gap-4 shrink-0">
                             <div class="text-sm text-zinc-300 font-bold font-brand">${item.cal.toFixed(0)} kcal</div>
                             <button onclick="removeMealItem(${item.id})" class="text-zinc-500 hover:text-red-400 p-2">✕</button>
                         </div>
@@ -1175,12 +1215,28 @@
             list.scrollTop = list.scrollHeight;
         }
 
-        /* --- RECIPES --- */
-        function saveAsRecipe() {
+        /* --- RECIPES (Replaced alert/prompt with Modals) --- */
+        function openRecipeModal() {
             if(state.currentMeal.length === 0) return showModal("Empty Builder", "Add some ingredients to the builder before saving as a recipe.");
-            
-            const recipeName = prompt("Enter a name for this recipe (e.g., 'Morning Shake'):");
+            document.getElementById('recipe-name-input').value = '';
+            document.getElementById('recipe-prompt-modal').classList.remove('hidden');
+            document.getElementById('recipe-prompt-modal').classList.add('flex');
+            setTimeout(() => document.getElementById('recipe-prompt-content').classList.remove('scale-95'), 10);
+        }
+
+        function closeRecipeModal() {
+            document.getElementById('recipe-prompt-content').classList.add('scale-95');
+            setTimeout(() => {
+                document.getElementById('recipe-prompt-modal').classList.add('hidden');
+                document.getElementById('recipe-prompt-modal').classList.remove('flex');
+            }, 200);
+        }
+
+        function confirmSaveRecipe() {
+            const recipeName = document.getElementById('recipe-name-input').value.trim();
             if(!recipeName) return;
+            
+            closeRecipeModal();
 
             let tCal = 0, tPro = 0, tFat = 0, tCarb = 0;
             state.currentMeal.forEach(item => { tCal += item.cal; tPro += item.pro; tFat += item.fat; tCarb += item.carb; });
@@ -1336,8 +1392,7 @@
             const msg = input.value.trim();
             if(!msg && !chatBase64Image) return;
 
-            const apiKey = localStorage.getItem('geminiApiKey');
-            if(!apiKey) return showModal("API Key", "Please add your Gemini Key in Config.");
+            const storedKey = localStorage.getItem('geminiApiKey');
 
             const chatBox = document.getElementById('chat-box');
             let userHTML = `<div class="bg-indigo-600 text-white p-4 rounded-2xl rounded-tr-sm max-w-[85%] text-sm">`;
@@ -1352,8 +1407,8 @@
             const context = `You are an elite AI Nutrition Coach. The user tracks their macros strictly. 
             If they upload a photo or describe a meal, analyze the ingredients accurately based on standard fitness portion sizes.
             Reply conversationally and professionally. 
-            CRITICAL: If you estimate macros for a meal in this chat, you MUST append this EXACT format at the very end of your reply so the system can parse it:
-            |||{"name":"Your Meal Name","cal":num,"pro":num,"fat":num,"carb":num}|||`;
+            CRITICAL: If you estimate macros for a meal in this chat, you MUST append a JSON object at the very end of your response exactly like this (use backticks or simple text):
+            {"name":"Your Meal Name","cal":num,"pro":num,"fat":num,"carb":num}`;
 
             const loadingId = 'load-' + Date.now();
             chatBox.innerHTML += `<div id="${loadingId}" class="flex justify-start"><div class="bg-indigo-900/40 text-indigo-300 p-4 rounded-2xl animate-pulse">Analyzing...</div></div>`;
@@ -1363,18 +1418,20 @@
             if (chatBase64Image) contents[0].parts.push({ inlineData: { data: chatBase64Image, mimeType: chatMimeType } });
 
             try {
-                const reply = await callGeminiAPI(contents, apiKey);
+                // Do not enforce JSON Mime Type for chat, since we want conversational text too
+                const reply = await callGeminiAPI(contents, storedKey, false); 
                 document.getElementById(loadingId).remove();
                 
                 let displayReply = reply;
                 let payload = null;
-                const match = reply.match(/\|\|\|(.*?)\|\|\|/s);
+                
+                // Attempt to extract the JSON block if the model provided it
+                const match = reply.match(/\{[\s\S]*\}/);
                 if (match) {
-                    displayReply = reply.replace(match[0], '').trim();
-                    try { 
-                        // Force clean the JSON from markdown
-                        let raw = match[1].replace(/```json/gi, '').replace(/```/g, '').trim();
-                        payload = JSON.parse(raw); 
+                    try {
+                        payload = JSON.parse(match[0]);
+                        // Remove the JSON string from the display message
+                        displayReply = reply.replace(match[0], '').replace(/```json/gi, '').replace(/```/g, '').trim();
                     } catch(e) { console.log("AI format error", e); }
                 }
 
@@ -1475,7 +1532,7 @@
                     pathData += `${xPerc},${yPerc} `; if(i < weightArr.length - 1) pathData += "L ";
                     dotsContainer.innerHTML += `
                         <div class="absolute w-2.5 h-2.5 bg-emerald-400 rounded-full transform -translate-x-1/2 -translate-y-1/2 shadow-lg border-2 border-black group hover:scale-150 transition-transform" style="left: ${xPerc}%; top: ${yPerc}%;">
-                            <span class="absolute bottom-4 left-1/2 -translate-x-1/2 bg-white text-black px-2 py-1 rounded text-[10px] font-bold opacity-0 group-hover:opacity-100">${w} kg</span>
+                            <span class="absolute bottom-4 left-1/2 -translate-x-1/2 bg-white text-black px-2 py-1 rounded text-[10px] font-bold opacity-0 group-hover:opacity-100 z-50">${w} kg</span>
                         </div>`;
                 });
                 svgPath.innerHTML = `<path d="${pathData}" fill="none" stroke="#34d399" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>`;
@@ -1542,7 +1599,6 @@
 
                 if (data.metrics && Array.isArray(data.metrics)) state.weightHistory = data.metrics.map(m => parseFloat(m[2])).filter(w => w > 0);
                 
-                // NEW: Actually Update Front-End from Profile
                 if (data.profile) {
                     if (data.profile.goals) {
                         state.goals = data.profile.goals;
@@ -1561,7 +1617,10 @@
 
                 renderDashboard(); renderAnalytics(); updateSyncUI();
                 if (showFeedback) showSysToast("Sync Successful", "Local data updated from the cloud.");
-            } catch (err) { updateSyncUI(); }
+            } catch (err) { 
+                updateSyncUI(); 
+                if (showFeedback) showModal("Sync Error", "Could not fetch from GAS backend. Check your URL or CORS settings. Reason: " + err.message);
+            }
         }
 
         function updateSyncUI() {
@@ -1609,7 +1668,8 @@
         }
 
         function showModal(title, msg) {
-            document.getElementById('modal-title').innerText = title; document.getElementById('modal-msg').innerText = msg;
+            document.getElementById('modal-title').innerText = title; 
+            document.getElementById('modal-msg').innerText = msg;
             document.getElementById('custom-modal').classList.remove('hidden');
             setTimeout(() => document.getElementById('modal-content').classList.remove('scale-95'), 10);
         }
