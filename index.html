@@ -836,12 +836,12 @@
         }
 
         async function callGeminiAPI(contents, userApiKey, isJson = false) {
-            // Environment Key takes precedence in Preview, otherwise use local config
-            const finalKey = apiKey || userApiKey;
+            // Priority: Canvas env key (if exists), otherwise User Config Key
+            const finalKey = (typeof apiKey !== 'undefined' && apiKey) ? apiKey : userApiKey;
             if(!finalKey) throw new Error("API Key is missing. Please paste your key in the Config tab.");
 
-            // Standardize model to latest version
-            const model = "gemini-2.5-flash-preview-09-2025"; 
+            // REVERTED TO PUBLICLY AVAILABLE STABLE MODEL FOR EXTERNAL WEBSITES
+            const model = "gemini-1.5-flash"; 
             
             const payload = { contents: contents };
             if (isJson) {
