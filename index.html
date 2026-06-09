@@ -818,55 +818,79 @@
         /* --- BULLETPROOF AI EXTRACTOR & API ENGINE --- */
         
         function safeParseJSON(text) {
-            try {
-                // First try standard parse (in case responseMimeType worked perfectly)
-                return JSON.parse(text);
-            } catch (e) {
-                // Fallback: Model hallucinated conversational text/markdown. Extract exact JSON structure.
+            try { return JSON.parse(text); } 
+            catch (e) {
+                // Fallback: AI returned conversational text or markdown blocks, find the {} structure
                 const match = text.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
                 if (match) {
-                    try {
-                        return JSON.parse(match[0]);
-                    } catch (e2) {
-                        throw new Error("AI returned malformed structure. " + e2.message);
-                    }
+                    try { return JSON.parse(match[0]); } 
+                    catch (e2) { throw new Error("AI returned malformed JSON structure."); }
                 }
                 throw new Error("AI did not return any JSON objects.");
             }
         }
 
-        async function callGeminiAPI(contents, userApiKey, isJson = false) {
-            // Priority: Canvas env key (if exists), otherwise User Config Key
+        async function callGeminiAPI(contents, userApiKey) {
             const finalKey = (typeof apiKey !== 'undefined' && apiKey) ? apiKey : userApiKey;
             if(!finalKey) throw new Error("API Key is missing. Please paste your key in the Config tab.");
 
-            // REVERTED TO PUBLICLY AVAILABLE STABLE MODEL FOR EXTERNAL WEBSITES
-            const model = "gemini-1.5-flash"; 
+            // WATERFALL FALLBACK ENGINE
+            // If the user's specific region or key generation date prohibits a specific model string,
+            // this loop will automatically test fallback models in fractions of a second until one works.
             
-            const payload = { contents: contents };
-            if (isJson) {
-                // Enforce JSON return type
-                payload.generationConfig = { responseMimeType: "application/json" };
+            let hasImage = false;
+            if (contents[0]?.parts) {
+                hasImage = contents[0].parts.some(p => p.inlineData);
             }
 
-            try {
-                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${finalKey}`, {
-                    method: "POST", headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(payload)
-                });
-                const data = await res.json();
-                
-                if (!res.ok) {
-                    throw new Error(data.error?.message || `HTTP ${res.status} Error`);
+            // Omit 1.0-pro and gemini-pro if there is an image, as they don't support vision
+            const modelsToTry = hasImage 
+                ? ["gemini-1.5-flash-latest", "gemini-1.5-flash", "gemini-1.5-pro-latest", "gemini-pro-vision"]
+                : ["gemini-1.5-flash-latest", "gemini-1.5-flash", "gemini-1.5-pro-latest", "gemini-1.0-pro", "gemini-pro"];
+
+            let lastError = null;
+
+            for (const model of modelsToTry) {
+                const payload = { contents: contents };
+
+                try {
+                    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${finalKey}`, {
+                        method: "POST", headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(payload)
+                    });
+                    const data = await res.json();
+                    
+                    if (!res.ok) {
+                        const errMsg = data.error?.message || "";
+                        
+                        // If model isn't supported for this user's key, swallow error and loop to the next model
+                        if (res.status === 404 || errMsg.includes("not found") || errMsg.includes("not supported") || errMsg.includes("deprecated")) {
+                            lastError = new Error(`Model ${model} unavailable in your region/key.`);
+                            continue; 
+                        }
+                        // Stop trying entirely if the API Key itself is invalid
+                        if (errMsg.includes("API key not valid")) {
+                            throw new Error("Invalid Gemini API Key. Please check the Config tab.");
+                        }
+                        
+                        throw new Error(errMsg || `HTTP ${res.status} Error`);
+                    }
+                    
+                    if (data.candidates && data.candidates[0].content.parts[0].text) {
+                        return data.candidates[0].content.parts[0].text;
+                    }
+                    throw new Error("Empty response from AI");
+                } catch (err) {
+                    // Only continue the loop if it's a specific fallback trigger
+                    if(err.message.includes("unavailable") || err.message.includes("fetch")) {
+                        lastError = err;
+                        continue;
+                    }
+                    throw err; // Real error (like Invalid Key), throw it outward to the UI
                 }
-                
-                if (data.candidates && data.candidates[0].content.parts[0].text) {
-                    return data.candidates[0].content.parts[0].text;
-                }
-                throw new Error("Empty response from AI");
-            } catch (err) {
-                throw err;
             }
+            
+            throw new Error("All Google AI models failed to respond. " + (lastError?.message || ""));
         }
 
         /* ========================
@@ -890,10 +914,10 @@
             const prompt = `You are an elite fitness architect. The user provided these stats: Age: ${age}, Weight: ${weight}kg, Height: ${height}, Goal: ${goal}. 
             Calculate their TDEE and safe macro goals. 
             CRUCIAL RULE: Formulate a safe caloric plan that prioritizes skin elasticity. High protein is required.
-            Return ONLY a raw JSON object with these exact keys: "cal" (number), "pro" (number), "fat" (number), "carb" (number). Do not include any other text.`;
+            Return ONLY a raw JSON object with these exact keys: "cal" (number), "pro" (number), "fat" (number), "carb" (number). Do not include any other text or markdown block formatting.`;
 
             try {
-                const text = await callGeminiAPI([{ role: "user", parts: [{ text: prompt }] }], storedKey, true);
+                const text = await callGeminiAPI([{ role: "user", parts: [{ text: prompt }] }], storedKey);
                 const newMacros = safeParseJSON(text);
 
                 if (!newMacros.cal || !newMacros.pro) throw new Error("AI returned an incomplete JSON format.");
@@ -970,7 +994,7 @@
             Step 3: Return ONLY a raw JSON object with this EXACT structure: {"name":"Short Meal Name","cal":100,"pro":20,"fat":5,"carb":10}`;
 
             try {
-                const text = await callGeminiAPI([{ role: "user", parts: [{ text: prompt }] }], storedKey, true);
+                const text = await callGeminiAPI([{ role: "user", parts: [{ text: prompt }] }], storedKey);
                 const foodData = safeParseJSON(text);
 
                 state.currentMeal.push({ id: Date.now(), name: foodData.name, grams: 1, cal: foodData.cal, pro: foodData.pro, fat: foodData.fat, carb: foodData.carb });
@@ -1090,7 +1114,7 @@
             Return ONLY a JSON object exactly like this: {"name":"Food Name","cal":100,"pro":20,"fat":5,"carb":10}`;
 
             try {
-                const text = await callGeminiAPI([{ role: "user", parts: [{ text: prompt }] }], storedKey, true);
+                const text = await callGeminiAPI([{ role: "user", parts: [{ text: prompt }] }], storedKey);
                 const f = safeParseJSON(text);
                 
                 const searchHtml = `
@@ -1155,7 +1179,7 @@
                     const prompt = `Calculate the nutritional value for exactly ${grams}g of: "${name}". Context: Precise fitness tracking.
                     Return ONLY a JSON object strictly like this: {"cal":100,"pro":20,"fat":5,"carb":10}`;
                     
-                    const text = await callGeminiAPI([{ role: "user", parts: [{ text: prompt }] }], localStorage.getItem('geminiApiKey'), true);
+                    const text = await callGeminiAPI([{ role: "user", parts: [{ text: prompt }] }], localStorage.getItem('geminiApiKey'));
                     const foodData = safeParseJSON(text);
 
                     cal = foodData.cal || 0; pro = foodData.pro || 0; fat = foodData.fat || 0; carb = foodData.carb || 0;
@@ -1419,7 +1443,7 @@
 
             try {
                 // Do not enforce JSON Mime Type for chat, since we want conversational text too
-                const reply = await callGeminiAPI(contents, storedKey, false); 
+                const reply = await callGeminiAPI(contents, storedKey); 
                 document.getElementById(loadingId).remove();
                 
                 let displayReply = reply;
