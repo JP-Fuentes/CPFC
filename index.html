@@ -14,7 +14,7 @@
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
-    
+
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Outfit:wght@500;700;800;900&display=swap');
 
@@ -100,13 +100,15 @@
         #reader { border-radius: 1rem; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); }
         #reader video { object-fit: cover; }
         
-        /* UI FIXES */
         #stage-cal, #stage-pro, #stage-fat, #stage-carb { font-size: 15px !important; letter-spacing: -0.5px; }
         .grid-cols-4 > div { padding: 8px 4px !important; }
         #search-dropdown { position: relative !important; margin-bottom: 15px; }
 
-        /* DISABLED STATE FOR ONLINE MODE */
         .input-disabled { opacity: 0.5; pointer-events: none; background-color: rgba(0,0,0,0.8) !important; }
+
+        /* Database Table */
+        .db-table th { background-color: rgba(0,0,0,0.6); position: sticky; top: 0; backdrop-filter: blur(10px); z-index: 10; }
+        .db-table tr:hover { background-color: rgba(255,255,255,0.03); }
     </style>
 </head>
 <body class="app-shell flex-col md:flex-row">
@@ -122,24 +124,28 @@
             </h1>
         </div>
 
-        <div class="flex justify-around md:flex-col md:space-y-2 md:justify-start">
-            <button onclick="switchTab('dashboard')" class="nav-btn active flex flex-col md:flex-row items-center gap-1 md:gap-4 p-2 md:p-3.5 rounded-xl w-full md:justify-start" data-target="dashboard">
+        <div class="flex justify-around md:flex-col md:space-y-2 md:justify-start overflow-x-auto no-scrollbar py-1 md:py-0">
+            <button onclick="switchTab('dashboard')" class="nav-btn active flex flex-col md:flex-row items-center gap-1 md:gap-4 p-2 md:p-3.5 rounded-xl min-w-[60px] md:w-full md:justify-start" data-target="dashboard">
                 <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
                 <span class="text-[10px] md:text-sm font-bold">Dash</span>
             </button>
-            <button onclick="switchTab('log')" class="nav-btn flex flex-col md:flex-row items-center gap-1 md:gap-4 p-2 md:p-3.5 rounded-xl w-full md:justify-start" data-target="log">
+            <button onclick="switchTab('log')" class="nav-btn flex flex-col md:flex-row items-center gap-1 md:gap-4 p-2 md:p-3.5 rounded-xl min-w-[60px] md:w-full md:justify-start" data-target="log">
                 <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
                 <span class="text-[10px] md:text-sm font-bold">Log</span>
             </button>
-            <button onclick="switchTab('coach')" class="nav-btn flex flex-col md:flex-row items-center gap-1 md:gap-4 p-2 md:p-3.5 rounded-xl w-full md:justify-start" data-target="coach">
+            <button onclick="switchTab('coach')" class="nav-btn flex flex-col md:flex-row items-center gap-1 md:gap-4 p-2 md:p-3.5 rounded-xl min-w-[60px] md:w-full md:justify-start" data-target="coach">
                 <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg>
                 <span class="text-[10px] md:text-sm font-bold">Coach</span>
             </button>
-            <button onclick="switchTab('analytics')" class="nav-btn flex flex-col md:flex-row items-center gap-1 md:gap-4 p-2 md:p-3.5 rounded-xl w-full md:justify-start" data-target="analytics">
+            <button onclick="switchTab('analytics')" class="nav-btn flex flex-col md:flex-row items-center gap-1 md:gap-4 p-2 md:p-3.5 rounded-xl min-w-[60px] md:w-full md:justify-start" data-target="analytics">
                 <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m19 9-5 5-4-4-3 3"/></svg>
                 <span class="text-[10px] md:text-sm font-bold">Stats</span>
             </button>
-            <button onclick="switchTab('settings')" class="nav-btn flex flex-col md:flex-row items-center gap-1 md:gap-4 p-2 md:p-3.5 rounded-xl w-full md:justify-start" data-target="settings">
+            <button onclick="switchTab('database')" class="nav-btn flex flex-col md:flex-row items-center gap-1 md:gap-4 p-2 md:p-3.5 rounded-xl min-w-[60px] md:w-full md:justify-start text-emerald-400" data-target="database">
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 15h18v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4z"/></svg>
+                <span class="text-[10px] md:text-sm font-bold">DB</span>
+            </button>
+            <button onclick="switchTab('settings')" class="nav-btn flex flex-col md:flex-row items-center gap-1 md:gap-4 p-2 md:p-3.5 rounded-xl min-w-[60px] md:w-full md:justify-start" data-target="settings">
                 <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
                 <span class="text-[10px] md:text-sm font-bold">Config</span>
             </button>
@@ -160,7 +166,7 @@
                     <p id="live-date" class="text-xs text-indigo-200 font-semibold tracking-wider uppercase">...</p>
                 </div>
                 
-                <div id="sync-status" class="flex items-center justify-center text-green-400 cursor-pointer" title="Online and Synced" onclick="syncHistoryFromCloud(true)">
+                <div id="sync-status" class="flex items-center justify-center text-green-400 cursor-pointer" title="Synced with Firebase">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/><path d="m9 15 3-3 3 3"/><path d="M12 12v9"/></svg>
                 </div>
 
@@ -445,9 +451,9 @@
                                 </div>
                             </div>
 
-                            <button onclick="triggerSubmitWithUndo()" class="w-full py-4 bg-white text-black active:scale-[0.98] transition-all rounded-xl text-base font-black flex justify-center items-center gap-2">
+                            <button onclick="commitMealLog()" class="w-full py-4 bg-white text-black active:scale-[0.98] transition-all rounded-xl text-base font-black flex justify-center items-center gap-2">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
-                                Log Meal to System
+                                Log Meal to Firebase
                             </button>
                         </div>
                     </div>
@@ -508,14 +514,12 @@
                     </div>
 
                     <div class="p-4 border-t border-white/10 bg-black/40 shrink-0">
-                        <!-- Image Preview Area -->
                         <div id="chat-img-preview-container" class="hidden mb-3 relative inline-block">
                             <img id="chat-img-preview" src="" class="h-16 w-16 object-cover rounded-xl border border-white/20">
                             <button onclick="clearChatImage()" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold">✕</button>
                         </div>
                         
                         <div class="flex gap-2">
-                            <!-- Image Upload Button -->
                             <label class="bg-black/60 border border-white/10 rounded-xl px-4 py-3 flex items-center justify-center cursor-pointer hover:bg-white/10 transition-colors">
                                 <input type="file" id="chat-image" accept="image/*" class="hidden" onchange="handleChatImageSelection(event)">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-indigo-400"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
@@ -526,6 +530,39 @@
                                 Send
                             </button>
                         </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- DATABASE TAB (NEW) -->
+            <section id="tab-database" class="tab-section max-w-6xl">
+                <div class="card p-6 md:p-8 flex flex-col h-[80vh]">
+                    <div class="flex justify-between items-center mb-6 shrink-0">
+                        <h2 class="text-sm font-black text-white/50 uppercase tracking-[0.2em]">Firestore Database Monitor</h2>
+                        <div class="bg-indigo-500/20 text-indigo-300 px-3 py-1 rounded-full text-xs font-bold border border-indigo-500/30 flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span> Live Sync
+                        </div>
+                    </div>
+                    
+                    <div class="flex-1 overflow-x-auto overflow-y-auto rounded-xl border border-white/10 bg-black/40">
+                        <table class="w-full text-left border-collapse db-table text-sm whitespace-nowrap">
+                            <thead>
+                                <tr class="text-zinc-400 uppercase text-[10px] tracking-widest font-black">
+                                    <th class="p-4 border-b border-white/10">Date & Time</th>
+                                    <th class="p-4 border-b border-white/10">Type</th>
+                                    <th class="p-4 border-b border-white/10">Item Name</th>
+                                    <th class="p-4 border-b border-white/10">Amount</th>
+                                    <th class="p-4 border-b border-white/10 text-indigo-400">Kcal</th>
+                                    <th class="p-4 border-b border-white/10 text-blue-400">Pro</th>
+                                    <th class="p-4 border-b border-white/10 text-orange-400">Fat</th>
+                                    <th class="p-4 border-b border-white/10 text-purple-400">Carb</th>
+                                    <th class="p-4 border-b border-white/10 text-center">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="db-table-body" class="text-white font-medium text-xs md:text-sm">
+                                <!-- Populated dynamically by Firebase snapshot -->
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </section>
@@ -602,10 +639,6 @@
                                 <input type="password" id="usda-key" class="w-full p-3 rounded-xl text-sm bg-black/50 border border-white/10" placeholder="Paste USDA key" onchange="saveSettings()">
                             </div>
                             <div>
-                                <label class="block text-sm font-bold text-white mb-2">GAS Backend URL (Phase 2)</label>
-                                <input type="url" id="gas-url" class="w-full p-3 rounded-xl text-sm bg-black/50 border border-white/10" placeholder="https://script.google.com/.../exec" onchange="saveSettings()">
-                            </div>
-                            <div>
                                 <label class="block text-sm font-bold text-white mb-2">Shift Reset Time</label>
                                 <input type="time" id="shift-start" class="w-full p-3 rounded-xl text-base font-bold bg-black/50 border border-white/10 max-w-[150px]" value="00:00" onchange="saveSettings()">
                             </div>
@@ -613,14 +646,8 @@
                     </div>
 
                     <div class="pt-2">
-                        <button onclick="forceCloudSync()" class="w-full py-3 bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl text-sm font-black shadow-md transition-colors flex items-center justify-center gap-2">
-                            Force Manual Sync
-                        </button>
-                    </div>
-
-                    <div class="pt-2">
                         <button onclick="saveSettings()" class="w-full py-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-base font-black transition-colors flex items-center justify-center gap-2">
-                            Save Configuration
+                            Save Configuration to Firebase
                         </button>
                     </div>
                 </div>
@@ -635,7 +662,6 @@
         <button onclick="closeScanner()" class="px-8 py-3 bg-red-600 text-white font-bold rounded-xl active:scale-95 transition-all">Cancel</button>
     </div>
 
-    <!-- General Error/Alert Modal -->
     <div id="custom-modal" class="fixed inset-0 bg-black/90 z-[9999] hidden flex items-center justify-center p-4">
         <div class="card p-8 w-full max-w-sm text-center transform scale-95 transition-transform" id="modal-content">
             <h3 id="modal-title" class="text-xl font-black mb-3 text-red-400 tracking-tight">Message</h3>
@@ -644,7 +670,6 @@
         </div>
     </div>
 
-    <!-- Recipe Prompt Modal -->
     <div id="recipe-prompt-modal" class="fixed inset-0 bg-black/90 z-[9999] hidden flex items-center justify-center p-4">
         <div class="card p-8 w-full max-w-sm text-center transform scale-95 transition-transform" id="recipe-prompt-content">
             <h3 class="text-xl font-black mb-3 text-white tracking-tight">Save Recipe</h3>
@@ -657,37 +682,55 @@
         </div>
     </div>
 
-    <div id="undo-toast" class="fixed bottom-24 left-1/2 -translate-x-1/2 z-[600] hidden">
-        <div class="bg-white text-black px-6 py-4 rounded-2xl font-black shadow-lg flex items-center gap-4">
-            <span>✅ Logged!</span>
-            <div class="w-px h-5 bg-black/20"></div>
-            <button onclick="undoMealLog()" class="text-red-500 hover:text-red-700 underline font-bold">UNDO</button>
-        </div>
-    </div>
-
-    <div id="sys-toast" class="fixed top-24 right-4 z-[9999] transform translate-x-[120%] opacity-0 transition-all duration-300 ease-out flex items-center gap-3 p-4 rounded-2xl shadow-xl border max-w-sm">
-        <div id="sys-toast-icon" class="w-8 h-8 rounded-full flex items-center justify-center shrink-0"></div>
+    <div id="sys-toast" class="fixed top-24 right-4 z-[9999] transform translate-x-[120%] opacity-0 transition-all duration-300 ease-out flex items-center gap-3 p-4 rounded-2xl shadow-xl border max-w-sm bg-indigo-900/90 border-indigo-500/50">
+        <div id="sys-toast-icon" class="w-8 h-8 rounded-full flex items-center justify-center shrink-0 bg-indigo-500/20 text-indigo-400">✓</div>
         <div>
             <h4 id="sys-toast-title" class="text-sm font-black text-white">Title</h4>
             <p id="sys-toast-msg" class="text-[11px] font-medium text-zinc-300 mt-0.5 leading-tight">Message</p>
         </div>
     </div>
 
-    <script>
-        /* ========================
-           STATE & CONFIGURATION
-           ======================== */
+    <!-- JAVASCRIPT LOGIC -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, getDocs, onSnapshot, doc, setDoc, getDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Firebase Configuration (from your screenshot)
+        let firebaseConfig = {
+            apiKey: "AIzaSyDoqPUr_BLpKDpJ3bDTvONtthj2jKPpTkA",
+            authDomain: "cpfc-374b9.firebaseapp.com",
+            projectId: "cpfc-374b9",
+            storageBucket: "cpfc-374b9.firebasestorage.app",
+            messagingSenderId: "999405738948",
+            appId: "1:999405738948:web:5cae4d4ecbb146d1fce291"
+        };
+        let basePathPrefix = "users";
+        let appId = "cpfc";
+
+        // Safeguard for internal Canvas Preview environment
+        if (typeof __firebase_config !== 'undefined') {
+            firebaseConfig = JSON.parse(__firebase_config);
+            appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+            basePathPrefix = `artifacts/${appId}/users`;
+        }
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        let currentUserUid = null;
+
         let state = {
-            today: JSON.parse(localStorage.getItem('cpfcTodayData')) || { cal: 0, pro: 0, fat: 0, carb: 0, water: 0 },
-            goals: JSON.parse(localStorage.getItem('cpfcGoals')) || { cal: 2500, pro: 150, fat: 80, carb: 200 },
-            dayMode: localStorage.getItem('cpfcDayMode') || 'workout', 
-            currentMeal: JSON.parse(localStorage.getItem('cpfcDraftMeal')) || [],
-            recipes: JSON.parse(localStorage.getItem('savedRecipes')) || [],
-            weeklyData: JSON.parse(localStorage.getItem('cpfcWeeklyData')) || [0, 0, 0, 0, 0, 0, 0],
-            offlineQueue: JSON.parse(localStorage.getItem('cpfcOfflineQueue')) || [],
-            lastActiveDayStr: localStorage.getItem('cpfcLastActiveDay') || "",
+            today: { cal: 0, pro: 0, fat: 0, carb: 0, water: 0 },
+            goals: { cal: 2500, pro: 150, fat: 80, carb: 200 },
+            dayMode: 'workout', 
+            currentMeal: [],
+            recipes: [],
+            weeklyData: [0, 0, 0, 0, 0, 0, 0],
+            historyLogs: [], // Grouped by day
+            rawLogs: [],     // Every single entry for Database tab
             weightHistory: [],
-            historyLogs: JSON.parse(localStorage.getItem('cpfcHistoryLogs')) || [] 
+            shiftStart: "00:00"
         };
 
         const localPHDatabase = [
@@ -697,713 +740,332 @@
             { id: 104, name: "Egg White, cooked", cal: 52, pro: 10.9, fat: 0.2, carb: 0.7 },
             { id: 105, name: "Canned Tuna in Water (drained)", cal: 116, pro: 25.5, fat: 0.8, carb: 0 },
             { id: 106, name: "Beef Tapa (Lean, 100g)", cal: 250, pro: 28, fat: 12, carb: 5 },
-            { id: 107, name: "Whey Protein Isolate (1 scoop)", cal: 110, pro: 25, fat: 0.5, carb: 1 },
-            { id: 108, name: "Sweet Potato, boiled", cal: 86, pro: 1.6, fat: 0.1, carb: 20 },
-            { id: 109, name: "Broccoli, steamed", cal: 34, pro: 2.8, fat: 0.4, carb: 6.6 }
+            { id: 107, name: "Whey Protein Isolate (1 scoop)", cal: 110, pro: 25, fat: 0.5, carb: 1 }
         ];
 
         let selectedBaseFood = null;
-        let undoTimeout = null;
-        let pendingLogBackup = null; 
         let globalShiftDateStr = "";
         let searchTimeout = null;
         let html5QrcodeScanner = null;
-        let apiKey = ""; // Used for Canvas injected API key fallback if needed.
 
-        /* ========================
-           INITIALIZATION
-           ======================== */
-        document.addEventListener('DOMContentLoaded', () => {
-            loadSettings();
-            document.getElementById('day-mode-select').value = state.dayMode;
-            startLiveClock();
-            checkDailyReset();
-            
-            toggleOnlineMode();
-            renderDashboard();
-            renderMealList();
-            populateRecipes(); 
-            renderAnalytics();
-            updateSyncUI();
-            
-            if(navigator.onLine && localStorage.getItem('gasUrl')) syncHistoryFromCloud(false);
+        // --- AUTHENTICATION ---
+        const initAuth = async () => {
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (err) { console.error("Auth failed:", err); }
+        };
+
+        initAuth();
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                currentUserUid = user.uid;
+                loadCloudSettings();
+                startFirestoreListeners();
+            }
         });
 
-        window.addEventListener('beforeunload', (e) => { if (state.currentMeal.length > 0) { e.preventDefault(); e.returnValue = ''; }});
-        window.addEventListener('online', () => { updateSyncUI(); checkOfflineQueue(); });
-        window.addEventListener('offline', updateSyncUI);
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('day-mode-select').value = state.dayMode;
+            startLiveClock();
+            toggleOnlineMode();
+            renderMealList();
+        });
 
-        const tabTitles = { 'dashboard': 'Dashboard', 'log': 'Log Meal', 'coach': 'AI Coach', 'analytics': 'Statistics', 'settings': 'Configuration' };
-
-        function switchTab(targetId) {
-            document.querySelectorAll('.tab-section').forEach(sec => sec.classList.remove('active-tab'));
-            setTimeout(() => document.getElementById(`tab-${targetId}`).classList.add('active-tab'), 50);
-            document.querySelectorAll('.nav-btn').forEach(btn => {
-                btn.classList.remove('active');
-                if(btn.dataset.target === targetId) btn.classList.add('active');
-            });
-            document.getElementById('page-title').innerText = tabTitles[targetId];
-        }
-
-        /* --- DAY CYCLING LOGIC --- */
-        function changeDayMode() {
-            state.dayMode = document.getElementById('day-mode-select').value;
-            localStorage.setItem('cpfcDayMode', state.dayMode);
+        // --- FIREBASE SYNC ---
+        async function loadCloudSettings() {
+            if(!currentUserUid) return;
+            const profileRef = doc(db, basePathPrefix, currentUserUid, 'profile', 'settings');
+            try {
+                const docSnap = await getDoc(profileRef);
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    if(data.goals) state.goals = data.goals;
+                    if(data.dayMode) state.dayMode = data.dayMode;
+                    if(data.shiftStart) state.shiftStart = data.shiftStart;
+                    
+                    document.getElementById('goal-cal').value = state.goals.cal;
+                    document.getElementById('goal-pro').value = state.goals.pro;
+                    document.getElementById('goal-fat').value = state.goals.fat;
+                    document.getElementById('goal-carb').value = state.goals.carb;
+                    document.getElementById('day-mode-select').value = state.dayMode;
+                    document.getElementById('shift-start').value = state.shiftStart;
+                    
+                    if(data.geminiKey) document.getElementById('gemini-key').value = data.geminiKey;
+                    if(data.usdaKey) document.getElementById('usda-key').value = data.usdaKey;
+                }
+            } catch (e) { console.error("Failed loading settings", e); }
             renderDashboard();
-            showSysToast("Mode Updated", `Dashboard targets adjusted for ${state.dayMode.toUpperCase()} day.`);
         }
 
-        function getDayMultipliers() {
-            if (state.dayMode === 'rest') return { cal: 0.85, pro: 1.0, fat: 0.9, carb: 0.8 };
-            if (state.dayMode === 'cheat') return { cal: 1.25, pro: 1.0, fat: 1.2, carb: 1.3 };
-            return { cal: 1.0, pro: 1.0, fat: 1.0, carb: 1.0 }; 
+        async function saveCloudSettings() {
+            if(!currentUserUid) return;
+            const profileRef = doc(db, basePathPrefix, currentUserUid, 'profile', 'settings');
+            await setDoc(profileRef, {
+                goals: state.goals,
+                dayMode: state.dayMode,
+                shiftStart: state.shiftStart,
+                geminiKey: document.getElementById('gemini-key').value,
+                usdaKey: document.getElementById('usda-key').value
+            }, { merge: true });
+            showSysToast("Saved to Cloud", "Configuration secured in Firebase.");
         }
 
-        function startLiveClock() {
-            function updateClock() {
-                const now = new Date();
-                document.getElementById('live-time').innerText = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
-                document.getElementById('live-date').innerText = now.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
-                checkShiftDay(now);
-            }
-            updateClock(); setInterval(updateClock, 1000);
+        function startFirestoreListeners() {
+            if(!currentUserUid) return;
+
+            // 1. Logs Listener
+            const logsRef = collection(db, basePathPrefix, currentUserUid, 'logs');
+            onSnapshot(logsRef, (snapshot) => {
+                let calcToday = { cal: 0, pro: 0, fat: 0, carb: 0, water: 0 };
+                let historyMap = {}; 
+                let weeklyArr = [0, 0, 0, 0, 0, 0, 0];
+                let allLogsArray = []; // For Database Tab
+
+                snapshot.docs.forEach(d => {
+                    const data = d.data();
+                    if(!data.shiftDateStr) return;
+                    
+                    allLogsArray.push({ id: d.id, ...data }); // Push raw log
+                    
+                    if(!historyMap[data.shiftDateStr]) historyMap[data.shiftDateStr] = { date: data.shiftDateStr, totalCal: 0, items: [] };
+                    
+                    if (data.type === 'Food') {
+                        historyMap[data.shiftDateStr].items.push(data);
+                        historyMap[data.shiftDateStr].totalCal += (data.cal || 0);
+                    }
+                    
+                    if (data.shiftDateStr === globalShiftDateStr) {
+                        if (data.type === 'Food') {
+                            calcToday.cal += (data.cal || 0); calcToday.pro += (data.pro || 0); calcToday.fat += (data.fat || 0); calcToday.carb += (data.carb || 0);
+                        } else if (data.type === 'Water') calcToday.water += (data.grams || 0);
+                    }
+
+                    let dateObj = new Date(data.shiftDateStr);
+                    let dayIdx = dateObj.getDay() === 0 ? 6 : dateObj.getDay() - 1;
+                    if(data.type === 'Food' && (new Date() - dateObj) < (7 * 24 * 60 * 60 * 1000)) { weeklyArr[dayIdx] += (data.cal || 0); }
+                });
+
+                state.today = calcToday;
+                state.weeklyData = weeklyArr;
+                state.rawLogs = allLogsArray.sort((a,b) => b.timestamp - a.timestamp); // Newest first
+                state.historyLogs = Object.values(historyMap).sort((a,b) => new Date(b.date) - new Date(a.date)).slice(0,10);
+                
+                renderDashboard();
+                renderAnalytics();
+                renderDatabaseTable(); // Trigger Database Table re-render
+            });
+
+            // 2. Recipes Listener
+            onSnapshot(collection(db, basePathPrefix, currentUserUid, 'recipes'), (snapshot) => {
+                state.recipes = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                populateRecipes();
+            });
+
+             // 3. Metrics Listener
+             onSnapshot(collection(db, basePathPrefix, currentUserUid, 'metrics'), (snapshot) => {
+                 state.weightHistory = snapshot.docs.map(doc => doc.data()).sort((a,b) => a.timestamp - b.timestamp).map(m => m.weight).filter(w => w > 0);
+                 renderAnalytics();
+             });
         }
 
-        function checkShiftDay(now) {
-            const shiftTime = document.getElementById('shift-start')?.value || "00:00";
-            const shiftHour = parseInt(shiftTime.split(':')[0]);
-            const shiftMin = parseInt(shiftTime.split(':')[1]);
-            let trackerDate = new Date(now);
-            if(now.getHours() < shiftHour || (now.getHours() === shiftHour && now.getMinutes() < shiftMin)) {
-                trackerDate.setDate(trackerDate.getDate() - 1);
-            }
-            globalShiftDateStr = trackerDate.toLocaleDateString();
-        }
-
-        function checkDailyReset() {
-            if (!globalShiftDateStr) return;
-            if (state.lastActiveDayStr !== "" && state.lastActiveDayStr !== globalShiftDateStr) {
-                state.today = { cal: 0, pro: 0, fat: 0, carb: 0, water: 0 };
-                let trackerDate = new Date(); 
-                let todayIdx = trackerDate.getDay() === 0 ? 6 : trackerDate.getDay() - 1;
-                state.weeklyData[todayIdx] = 0; 
-                saveStateToLocal();
-            }
-            state.lastActiveDayStr = globalShiftDateStr;
-            localStorage.setItem('cpfcLastActiveDay', state.lastActiveDayStr);
-        }
-
-        function saveStateToLocal() {
-            localStorage.setItem('cpfcTodayData', JSON.stringify(state.today));
-            localStorage.setItem('cpfcWeeklyData', JSON.stringify(state.weeklyData));
-            localStorage.setItem('cpfcHistoryLogs', JSON.stringify(state.historyLogs));
-        }
-
-        let sysToastTimer;
-        function showSysToast(title, msg, type = 'info') {
-            const toast = document.getElementById('sys-toast');
-            const iconBox = document.getElementById('sys-toast-icon');
-            document.getElementById('sys-toast-title').innerText = title;
-            document.getElementById('sys-toast-msg').innerText = msg;
-            toast.className = `fixed top-24 right-4 z-[9999] transform transition-all duration-300 ease-out flex items-center gap-3 p-4 rounded-2xl shadow-2xl border max-w-sm translate-x-[120%] opacity-0`;
+        // --- RENDER FUNCTIONS ---
+        function renderDatabaseTable() {
+            const tbody = document.getElementById('db-table-body');
+            tbody.innerHTML = '';
             
-            if(type === 'error') { toast.classList.add('bg-red-900/90', 'border-red-500/50'); iconBox.className = "w-8 h-8 rounded-full flex items-center justify-center shrink-0 bg-red-500/20 text-red-400"; iconBox.innerHTML = `!`; }
-            else { toast.classList.add('bg-indigo-900/90', 'border-indigo-500/50'); iconBox.className = "w-8 h-8 rounded-full flex items-center justify-center shrink-0 bg-indigo-500/20 text-indigo-400"; iconBox.innerHTML = `✓`; }
+            if(state.rawLogs.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="9" class="p-8 text-center text-zinc-500">Database is empty. Log a meal to see it here!</td></tr>`;
+                return;
+            }
 
-            setTimeout(() => { toast.classList.add('side-toast-enter'); }, 10);
-            clearTimeout(sysToastTimer);
-            sysToastTimer = setTimeout(() => { toast.classList.remove('side-toast-enter'); }, 4000);
+            state.rawLogs.forEach(log => {
+                const dObj = new Date(log.timestamp);
+                const dStr = dObj.toLocaleDateString();
+                const tStr = dObj.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                const typeIcon = log.type === 'Food' ? '🍗 Food' : '💧 Water';
+                
+                tbody.innerHTML += `
+                    <tr class="border-b border-white/5 transition-colors">
+                        <td class="p-4 text-white">${dStr} <span class="text-zinc-500 text-[10px] ml-1">${tStr}</span></td>
+                        <td class="p-4"><span class="bg-white/10 px-2 py-1 rounded-md text-[10px] uppercase font-bold tracking-widest">${typeIcon}</span></td>
+                        <td class="p-4 font-bold text-white max-w-[150px] truncate" title="${log.item}">${log.item}</td>
+                        <td class="p-4 text-white">${log.grams || 0}${log.type === 'Water' ? 'ml' : 'g'}</td>
+                        <td class="p-4 font-bold text-indigo-300">${(log.cal || 0).toFixed(0)}</td>
+                        <td class="p-4 font-bold text-blue-300">${(log.pro || 0).toFixed(1)}</td>
+                        <td class="p-4 font-bold text-orange-300">${(log.fat || 0).toFixed(1)}</td>
+                        <td class="p-4 font-bold text-purple-300">${(log.carb || 0).toFixed(1)}</td>
+                        <td class="p-4 text-center">
+                            <button onclick="window.deleteLogFromDb('${log.id}')" class="text-zinc-500 hover:text-red-400 bg-black/50 p-2 rounded-lg transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                            </button>
+                        </td>
+                    </tr>`;
+            });
         }
 
-        /* --- API ENGINE --- */
+        window.deleteLogFromDb = async (docId) => {
+            if(!currentUserUid) return;
+            if(confirm("Permanently delete this log?")) {
+                try {
+                    await deleteDoc(doc(db, basePathPrefix, currentUserUid, 'logs', docId));
+                    showSysToast("Deleted", "Row removed from Firebase.");
+                } catch(e) { showModal("Error", e.message); }
+            }
+        };
+
+        function renderDashboard() {
+            const mult = state.dayMode === 'rest' ? 0.85 : (state.dayMode === 'cheat' ? 1.25 : 1.0);
+            const gCal = state.goals.cal * mult;
+            const updateBar = (id, current, max) => {
+                let perc = Math.min((current / max) * 100, 100) || 0;
+                document.getElementById(`${id}-bar`).style.width = `${perc}%`;
+                document.getElementById(`${id}-text`).innerText = current.toFixed(0);
+                document.getElementById(`${id}-max`).innerText = `/ ${max.toFixed(0)}${id==='cal'?' kcal':'g'}`;
+            }
+            updateBar('cal', state.today.cal, gCal);
+            updateBar('pro', state.today.pro, state.goals.pro * mult);
+            updateBar('fat', state.today.fat, state.goals.fat * mult);
+            updateBar('carb', state.today.carb, state.goals.carb * mult);
+            document.getElementById('water-text').innerText = state.today.water;
+        }
+
+        function renderAnalytics() {
+            const chart = document.getElementById('weekly-chart'); const labels = document.getElementById('weekly-labels');
+            const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+            const maxVal = Math.max(...state.weeklyData, state.goals.cal) + 400;
+
+            chart.innerHTML = ''; labels.innerHTML = '';
+            state.weeklyData.forEach((val, i) => {
+                const heightPerc = (val / maxVal) * 100;
+                chart.innerHTML += `<div class="w-full mx-2 bg-black/50 rounded-t-xl relative flex flex-col justify-end h-full border border-white/5 border-b-0"><div class="w-full bg-gradient-to-t from-indigo-500 to-cyan-500 rounded-t-xl transition-all shadow-inner" style="height: ${heightPerc}%;"></div></div>`;
+                let todayIdx = new Date().getDay() === 0 ? 6 : new Date().getDay() - 1;
+                labels.innerHTML += `<span class="w-full text-center ${i === todayIdx ? 'text-indigo-400 font-black' : 'text-zinc-500'}">${days[i]}</span>`;
+            });
+
+            const historyContainer = document.getElementById('history-container'); historyContainer.innerHTML = '';
+            if(state.historyLogs.length === 0) { historyContainer.innerHTML = `<p class="text-zinc-500 text-sm">No recent logs found.</p>`; } 
+            else {
+                state.historyLogs.forEach(log => {
+                    const itemsList = log.items.map(i => `<div class="text-[11px] text-zinc-400">• ${i.item || i.name} (${i.cal.toFixed(0)} kcal)</div>`).join('');
+                    historyContainer.innerHTML += `
+                    <div class="bg-black/40 border border-white/5 p-4 rounded-xl">
+                        <div class="flex justify-between items-center mb-2"><span class="text-sm font-bold text-white">${log.date}</span><span class="text-xs font-black text-indigo-400">${log.totalCal.toFixed(0)} kcal</span></div>
+                        ${itemsList}
+                    </div>`;
+                });
+            }
+
+            const weightArr = state.weightHistory;
+            const svgPath = document.getElementById('weight-svg-path'); const dotsContainer = document.getElementById('weight-dots-container');
+            svgPath.innerHTML = ''; dotsContainer.innerHTML = '';
+            if(weightArr.length > 1) {
+                const maxW = Math.max(...weightArr) + 2; const minW = Math.min(...weightArr) - 2; 
+                const range = maxW - minW; let pathData = "M ";
+                weightArr.forEach((w, i) => {
+                    const xPerc = (i / (weightArr.length - 1)) * 100; const yPerc = 100 - (((w - minW) / range) * 100);
+                    pathData += `${xPerc},${yPerc} `; if(i < weightArr.length - 1) pathData += "L ";
+                    dotsContainer.innerHTML += `<div class="absolute w-2.5 h-2.5 bg-emerald-400 rounded-full transform -translate-x-1/2 -translate-y-1/2 shadow-lg border-2 border-black group hover:scale-150 transition-transform" style="left: ${xPerc}%; top: ${yPerc}%;"><span class="absolute bottom-4 left-1/2 -translate-x-1/2 bg-white text-black px-2 py-1 rounded text-[10px] font-bold opacity-0 group-hover:opacity-100 z-50">${w} kg</span></div>`;
+                });
+                svgPath.innerHTML = `<path d="${pathData}" fill="none" stroke="#34d399" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>`;
+            }
+        }
+
+        // --- AI API LOGIC ---
         function safeParseJSON(text) {
             try { return JSON.parse(text); } 
             catch (e) {
                 const match = text.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
-                if (match) {
-                    try { return JSON.parse(match[0]); } 
-                    catch (e2) { throw new Error("AI returned malformed JSON structure."); }
-                }
-                throw new Error("AI did not return any JSON objects.");
+                if (match) { try { return JSON.parse(match[0]); } catch (e2) {} }
+                throw new Error("AI did not return valid JSON formats.");
             }
         }
 
         async function callGeminiAPI(contents, userApiKey, isJson = false) {
-            const finalKey = (typeof apiKey !== 'undefined' && apiKey) ? apiKey : userApiKey;
-            if(!finalKey) throw new Error("API Key is missing. Please paste your key in the Config tab.");
-
-            // Directly call the most stable, universally available model
-            const model = "gemini-1.5-flash"; 
-            
+            if(!userApiKey) throw new Error("API Key missing. Paste in Config tab.");
             const payload = { contents: contents };
-            if (isJson) {
-                payload.generationConfig = { responseMimeType: "application/json" };
-            }
+            if (isJson) payload.generationConfig = { responseMimeType: "application/json" };
 
-            try {
-                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${finalKey}`, {
-                    method: "POST", headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(payload)
-                });
-                
-                const data = await res.json();
-                
-                if (!res.ok) {
-                    throw new Error(data.error?.message || `HTTP ${res.status} Error`);
-                }
-                
-                if (data.candidates && data.candidates[0].content.parts[0].text) {
-                    return data.candidates[0].content.parts[0].text;
-                }
-                
-                throw new Error("Empty response from AI");
-                
-            } catch (err) {
-                throw err;
-            }
+            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${userApiKey}`, {
+                method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error?.message || `HTTP Error`);
+            if (data.candidates && data.candidates[0].content.parts[0].text) return data.candidates[0].content.parts[0].text;
+            throw new Error("Empty AI response");
         }
 
-        /* ========================
-           PHASE 2: SMART TDEE SETUP
-           ======================== */
-        async function generateSmartMacros(event) {
-            const age = document.getElementById('ai-age').value;
-            const weight = document.getElementById('ai-weight').value;
-            const height = document.getElementById('ai-height').value;
-            const goal = document.getElementById('ai-goal').value;
-
-            const storedKey = localStorage.getItem('geminiApiKey');
+        async function windowGenerateSmartMacros(event) {
+            const age = document.getElementById('ai-age').value; const weight = document.getElementById('ai-weight').value; const height = document.getElementById('ai-height').value; const goal = document.getElementById('ai-goal').value; const storedKey = document.getElementById('gemini-key').value;
+            if(!age || !weight || !height) return showModal("Input Required", "Fill out Age, Weight, Height.");
             
-            if(!age || !weight || !height) return showModal("Input Required", "Please fill out your Age, Weight, and Height.");
-            
-            const btn = event.currentTarget;
-            const originalText = btn.innerHTML;
-            btn.innerHTML = `<div class="spinner border-2 border-white border-t-transparent rounded-full w-4 h-4 inline-block mr-2"></div> Calculating...`;
-            btn.disabled = true;
+            const btn = event.currentTarget; const originalText = btn.innerHTML;
+            btn.innerHTML = `Calculating...`; btn.disabled = true;
 
-            const prompt = `You are an elite fitness architect. The user provided these stats: Age: ${age}, Weight: ${weight}kg, Height: ${height}, Goal: ${goal}. 
-            Calculate their TDEE and safe macro goals. 
-            CRUCIAL RULE: Formulate a safe caloric plan that prioritizes skin elasticity. High protein is required.
-            Return ONLY a raw JSON object with these exact keys: "cal" (number), "pro" (number), "fat" (number), "carb" (number). Do not include any other text or markdown block formatting.`;
-
+            const prompt = `Stats: Age: ${age}, Weight: ${weight}kg, Height: ${height}, Goal: ${goal}. Calculate TDEE and safe macro goals for skin elasticity. Return ONLY JSON: {"cal":2500, "pro":150, "fat":80, "carb":200}`;
             try {
                 const text = await callGeminiAPI([{ role: "user", parts: [{ text: prompt }] }], storedKey, true);
                 const newMacros = safeParseJSON(text);
-
-                if (!newMacros.cal || !newMacros.pro) throw new Error("AI returned an incomplete JSON format.");
-
-                document.getElementById('goal-cal').value = newMacros.cal;
-                document.getElementById('goal-pro').value = newMacros.pro;
-                document.getElementById('goal-fat').value = newMacros.fat;
-                document.getElementById('goal-carb').value = newMacros.carb;
-                
-                saveSettings();
-                showSysToast("Setup Complete", `Macros safely set to: ${newMacros.cal} kcal.`);
-            } catch (e) {
-                showModal("Calculation Error", "Failed to generate macros. Reason: \n\n" + e.message);
-            } finally {
-                btn.innerHTML = originalText;
-                btn.disabled = false;
-            }
+                document.getElementById('goal-cal').value = newMacros.cal; document.getElementById('goal-pro').value = newMacros.pro; document.getElementById('goal-fat').value = newMacros.fat; document.getElementById('goal-carb').value = newMacros.carb;
+                windowSaveSettings();
+            } catch (e) { showModal("Calculation Error", e.message); } 
+            finally { btn.innerHTML = originalText; btn.disabled = false; }
         }
 
-        /* ========================
-           LOG ENTRY MODES
-           ======================== */
-        function toggleLogMode() {
-            const mode = document.getElementById('log-entry-mode').value;
-            if(mode === 'standard') {
-                document.getElementById('standard-entry-container').classList.remove('hidden');
-                document.getElementById('chat-entry-container').classList.add('hidden');
-            } else {
-                document.getElementById('standard-entry-container').classList.add('hidden');
-                document.getElementById('chat-entry-container').classList.remove('hidden');
-            }
-        }
+        async function windowProcessChatCalculation(event) {
+            const input = document.getElementById('chat-calc-input').value.trim(); if(!input) return;
+            const storedKey = document.getElementById('gemini-key').value;
+            const btn = event.currentTarget; btn.innerHTML = `Processing...`; btn.disabled = true;
 
-        function toggleOnlineMode() {
-            const isOffline = document.getElementById('offline-toggle').checked;
-            const label = document.getElementById('mode-label');
-            const inputs = ['stage-cal', 'stage-pro', 'stage-fat', 'stage-carb'];
-            
-            if (isOffline) {
-                label.innerText = "Manual Offline";
-                label.className = "text-[10px] font-bold uppercase tracking-widest text-zinc-400";
-                inputs.forEach(id => {
-                    const el = document.getElementById(id);
-                    el.classList.remove('input-disabled');
-                    if(el.value === "..." || el.value === "Auto") el.value = "0";
-                });
-            } else {
-                label.innerText = "AI Online";
-                label.className = "text-[10px] font-bold uppercase tracking-widest text-indigo-400";
-                inputs.forEach(id => {
-                    const el = document.getElementById(id);
-                    el.classList.add('input-disabled');
-                    el.value = "Auto";
-                });
-                selectedBaseFood = null;
-            }
-        }
-
-        /* --- QUICK CHAT CALCULATION --- */
-        async function processChatCalculation(event) {
-            const input = document.getElementById('chat-calc-input').value.trim();
-            if(!input) return showModal("Missing Info", "Please type what you ate.");
-            const storedKey = localStorage.getItem('geminiApiKey');
-
-            showSysToast("AI Calculating...", "Estimating exact macros for your meal.");
-            const btn = event.currentTarget;
-            btn.innerHTML = `<div class="spinner border-2 border-white border-t-transparent rounded-full w-5 h-5"></div> Processing...`;
-            btn.disabled = true;
-
-            const prompt = `You are an elite sports nutrition AI. Calculate the exact total macros for this specific meal: "${input}".
-            Context: Philippine and general bodybuilding foods (e.g. Athlene Whey, Equal sweetener is 0 cal).
-            Step 1: Identify every single ingredient and calculate its macros accurately based on standard fitness sizes.
-            Step 2: SUM up ALL ingredients into ONE single total.
-            Step 3: Return ONLY a raw JSON object with this EXACT structure: {"name":"Short Meal Name","cal":100,"pro":20,"fat":5,"carb":10}`;
-
+            const prompt = `Calculate exact total macros for this meal: "${input}". Assume standard bodybuilding sizes if not given. Return ONLY JSON: {"name":"Meal Name","cal":100,"pro":20,"fat":5,"carb":10}`;
             try {
                 const text = await callGeminiAPI([{ role: "user", parts: [{ text: prompt }] }], storedKey, true);
-                const foodData = safeParseJSON(text);
-
-                state.currentMeal.push({ id: Date.now(), name: foodData.name, grams: 1, cal: foodData.cal, pro: foodData.pro, fat: foodData.fat, carb: foodData.carb });
-                localStorage.setItem('cpfcDraftMeal', JSON.stringify(state.currentMeal));
-                renderMealList();
-                
-                document.getElementById('chat-calc-input').value = '';
-                showSysToast("Added!", `${foodData.name} added to builder.`);
-            } catch (e) {
-                showModal("AI Formatting Error", "Failed to parse AI output. Reason: \n\n" + e.message);
-            } finally {
-                btn.innerHTML = `✨ Calculate Macros`;
-                btn.disabled = false;
-            }
+                const data = safeParseJSON(text);
+                state.currentMeal.push({ id: Date.now(), name: data.name, grams: 1, cal: data.cal, pro: data.pro, fat: data.fat, carb: data.carb });
+                renderMealList(); document.getElementById('chat-calc-input').value = ''; showSysToast("Added!", `${data.name} built.`);
+            } catch (e) { showModal("Error", e.message); } 
+            finally { btn.innerHTML = `✨ Calculate Macros`; btn.disabled = false; }
         }
 
-        /* --- BARCODE SCANNER --- */
-        function openScanner() {
-            const modal = document.getElementById('scanner-modal');
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
-            
-            if(!html5QrcodeScanner) {
-                html5QrcodeScanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: {width: 250, height: 250} }, false);
-            }
-            html5QrcodeScanner.render(onScanSuccess, onScanFailure);
-        }
-
-        function closeScanner() {
-            const modal = document.getElementById('scanner-modal');
-            if (html5QrcodeScanner) {
-                html5QrcodeScanner.clear().then(() => {
-                    modal.classList.add('hidden');
-                    modal.classList.remove('flex');
-                }).catch(error => {
-                    modal.classList.add('hidden');
-                    modal.classList.remove('flex');
-                });
-            } else {
-                modal.classList.add('hidden');
-                modal.classList.remove('flex');
-            }
-        }
-
-        function onScanSuccess(decodedText, decodedResult) {
-            closeScanner();
-            document.getElementById('food-search').value = decodedText;
-            forceAISearch(decodedText); 
-        }
-
-        function onScanFailure(error) {}
-
-        /* --- SMART SEARCH --- */
-        function debounceSearch() {
-            clearTimeout(searchTimeout);
-            searchTimeout = setTimeout(handleSearch, 300);
-        }
-
-        async function handleSearch() {
-            const query = document.getElementById('food-search').value.toLowerCase();
-            const dropdown = document.getElementById('search-dropdown');
-            const storedKey = localStorage.getItem('usdaApiKey');
-            if (query.length < 3) { dropdown.classList.add('hidden'); return; }
-
-            dropdown.innerHTML = `<div class="p-5 text-sm font-bold text-indigo-400 text-center animate-pulse">Searching...</div>`;
-            dropdown.classList.remove('hidden');
-
-            let searchHtml = "";
-            let foundResults = false;
-
-            const localResults = localPHDatabase.filter(food => food.name.toLowerCase().includes(query));
-            if (localResults.length > 0) {
-                foundResults = true;
-                searchHtml += `<div class="bg-indigo-900/50 px-4 py-1.5 text-[10px] font-black tracking-widest uppercase text-indigo-300">Local DB</div>`;
-                searchHtml += localResults.map(food => `
-                    <div onclick='stageFood(${JSON.stringify(food)})' class="p-4 hover:bg-white/10 cursor-pointer border-b border-white/5">
-                        <div class="text-sm font-bold text-white mb-1.5 font-brand">${food.name}</div>
-                        <div class="text-[11px] font-bold text-indigo-300 uppercase tracking-widest">${food.cal} kcal | ${food.pro}P | ${food.fat}F | ${food.carb}C</div>
-                    </div>
-                `).join('');
-            }
-
-            if(storedKey && navigator.onLine) {
-                try {
-                    const response = await fetch(`https://api.nal.usda.gov/fdc/v1/foods/search?query=${query}&api_key=${storedKey}&pageSize=3`);
-                    const data = await response.json();
-                    if(data.foods && data.foods.length > 0) {
-                        foundResults = true;
-                        searchHtml += `<div class="bg-green-900/30 px-4 py-1.5 text-[10px] font-black tracking-widest uppercase text-green-400">USDA DB</div>`;
-                        const results = data.foods.map(food => {
-                            const getNutrient = (id) => { const n = food.foodNutrients.find(x => x.nutrientId === id); return n ? n.value : 0; };
-                            return { name: food.description, cal: getNutrient(1008), pro: getNutrient(1003), fat: getNutrient(1004), carb: getNutrient(1005) };
-                        });
-                        searchHtml += results.map(f => `
-                            <div onclick='stageFood(${JSON.stringify(f)})' class="p-4 hover:bg-white/10 cursor-pointer border-b border-white/5">
-                                <div class="text-sm font-bold text-white mb-1.5 font-brand">${f.name}</div>
-                                <div class="text-[11px] font-bold text-green-400 uppercase tracking-widest">${f.cal.toFixed(0)} kcal | ${f.pro.toFixed(1)}P | ${f.fat.toFixed(1)}F | ${f.carb.toFixed(1)}C</div>
-                            </div>
-                        `).join('');
-                    }
-                } catch (e) { console.error("USDA Error", e); }
-            }
-
-            if (!foundResults) searchHtml = `<div class="p-6 text-center text-sm text-zinc-400 font-medium">No match found. Use AI Auto-Fill or Chat Calculation.</div>`;
-            dropdown.innerHTML = searchHtml;
-        }
-
-        async function forceAISearch(overrideQuery = null) {
-            const query = overrideQuery || document.getElementById('food-search').value;
-            if(!query) return showModal("Empty Search", "Type a food name or scan a barcode first.");
-            const storedKey = localStorage.getItem('geminiApiKey');
-
-            document.getElementById('search-dropdown').classList.remove('hidden');
-            document.getElementById('search-dropdown').innerHTML = `<div class="p-5 text-sm font-bold text-indigo-400 text-center animate-pulse">AI is estimating "${query}"...</div>`;
-
-            const prompt = `You are a sports nutrition database. The user searched for or scanned: "${query}". Provide the standard nutritional values for 100g of this item.
-            Return ONLY a JSON object exactly like this: {"name":"Food Name","cal":100,"pro":20,"fat":5,"carb":10}`;
-
-            try {
-                const text = await callGeminiAPI([{ role: "user", parts: [{ text: prompt }] }], storedKey, true);
-                const f = safeParseJSON(text);
-                
-                const searchHtml = `
-                    <div class="bg-purple-900/50 px-4 py-1.5 text-[10px] font-black tracking-widest uppercase text-purple-300">AI Estimate (per 100g)</div>
-                    <div onclick='stageFood(${JSON.stringify(f)})' class="p-4 hover:bg-white/10 cursor-pointer border-b border-white/5">
-                        <div class="text-sm font-bold text-white mb-1.5 font-brand">${f.name}</div>
-                        <div class="text-[11px] font-bold text-purple-300 uppercase tracking-widest">${f.cal} kcal | ${f.pro}P | ${f.fat}F | ${f.carb}C</div>
-                    </div>`;
-                document.getElementById('search-dropdown').innerHTML = searchHtml;
-            } catch (e) {
-                document.getElementById('search-dropdown').innerHTML = `<div class="p-5 text-sm font-bold text-red-400 text-center">AI failed: ${e.message}</div>`;
-            }
-        }
-
-        function stageFood(food) {
-            selectedBaseFood = food; 
-            document.getElementById('search-dropdown').classList.add('hidden');
-            document.getElementById('food-search').value = '';
-            
-            document.getElementById('log-entry-mode').value = 'standard';
-            toggleLogMode();
-            
-            document.getElementById('stage-name').value = food.name;
-            document.getElementById('stage-grams').value = 100;
-            
-            if(!document.getElementById('offline-toggle').checked) {
-                document.getElementById('offline-toggle').checked = true;
-                toggleOnlineMode();
-            }
-            calculateStaged();
-        }
-
-        function calculateStaged() {
-            if(!selectedBaseFood || !document.getElementById('offline-toggle').checked) return;
-            const factor = (parseFloat(document.getElementById('stage-grams').value) || 0) / 100;
-            document.getElementById('stage-cal').value = (selectedBaseFood.cal * factor).toFixed(0);
-            document.getElementById('stage-pro').value = (selectedBaseFood.pro * factor).toFixed(1);
-            document.getElementById('stage-fat').value = (selectedBaseFood.fat * factor).toFixed(1);
-            document.getElementById('stage-carb').value = (selectedBaseFood.carb * factor).toFixed(1);
-        }
-
-        function clearBaseFood() { selectedBaseFood = null; }
-
-        async function addStagedToMeal() {
-            const name = document.getElementById('stage-name').value;
-            let grams = parseFloat(document.getElementById('stage-grams').value) || 0;
-            const isOffline = document.getElementById('offline-toggle').checked;
-            
-            if(!name || grams <= 0) return showModal("Missing Info", "Enter an item name and valid grams.");
-
-            let cal = 0, pro = 0, fat = 0, carb = 0;
-
-            if (isOffline) {
-                cal = parseFloat(document.getElementById('stage-cal').value) || 0;
-                pro = parseFloat(document.getElementById('stage-pro').value) || 0;
-                fat = parseFloat(document.getElementById('stage-fat').value) || 0;
-                carb = parseFloat(document.getElementById('stage-carb').value) || 0;
-            } else {
-                document.getElementById('stage-cal').value = "...";
-                showSysToast("AI Activating", "Fetching accurate data...");
-                try {
-                    const prompt = `Calculate the nutritional value for exactly ${grams}g of: "${name}". Context: Precise fitness tracking.
-                    Return ONLY a JSON object strictly like this: {"cal":100,"pro":20,"fat":5,"carb":10}`;
-                    
-                    const text = await callGeminiAPI([{ role: "user", parts: [{ text: prompt }] }], localStorage.getItem('geminiApiKey'), true);
-                    const foodData = safeParseJSON(text);
-
-                    cal = foodData.cal || 0; pro = foodData.pro || 0; fat = foodData.fat || 0; carb = foodData.carb || 0;
-                } catch(e) {
-                    return showModal("AI Error", "Failed to get AI output. Reason: \n" + e.message + "\n\nSwitch to Manual Offline mode to log, or try again.");
-                }
-            }
-
-            state.currentMeal.push({ id: Date.now(), name, grams, cal, pro, fat, carb });
-            localStorage.setItem('cpfcDraftMeal', JSON.stringify(state.currentMeal));
-            renderMealList();
-            
-            ['stage-name'].forEach(id => document.getElementById(id).value = '');
-            document.getElementById('stage-grams').value = '100';
-            if(isOffline) {
-                ['stage-cal', 'stage-pro', 'stage-fat', 'stage-carb'].forEach(id => document.getElementById(id).value = '0');
-            }
-            selectedBaseFood = null;
-        }
-
-        function removeMealItem(id) {
-            state.currentMeal = state.currentMeal.filter(item => item.id !== id);
-            localStorage.setItem('cpfcDraftMeal', JSON.stringify(state.currentMeal));
-            renderMealList();
-        }
-
-        function renderMealList() {
-            const list = document.getElementById('meal-list');
-            list.innerHTML = '';
-            let tCal = 0, tPro = 0, tFat = 0, tCarb = 0;
-
-            if(state.currentMeal.length === 0) {
-                list.innerHTML = "Empty. Add foods from the left panel.";
-                document.getElementById('meal-total-display').innerText = `0 kcal`;
-                return;
-            }
-
-            state.currentMeal.forEach(item => {
-                tCal += item.cal; tPro += item.pro; tFat += item.fat; tCarb += item.carb;
-                list.innerHTML += `
-                    <div class="flex justify-between items-center bg-black/40 p-4 rounded-xl border border-white/5">
-                        <div class="text-left w-3/5 truncate pr-2">
-                            <p class="text-base font-bold text-white font-brand truncate">${item.name}</p>
-                            <p class="text-[11px] font-bold uppercase tracking-widest text-indigo-300">${item.grams}g</p>
-                        </div>
-                        <div class="flex items-center gap-4 shrink-0">
-                            <div class="text-sm text-zinc-300 font-bold font-brand">${item.cal.toFixed(0)} kcal</div>
-                            <button onclick="removeMealItem(${item.id})" class="text-zinc-500 hover:text-red-400 p-2">✕</button>
-                        </div>
-                    </div>`;
-            });
-
-            document.getElementById('meal-total-display').innerText = `${tCal.toFixed(0)} kcal`;
-            document.getElementById('meal-p-display').innerText = `${tPro.toFixed(1)}g`;
-            document.getElementById('meal-f-display').innerText = `${tFat.toFixed(1)}g`;
-            document.getElementById('meal-c-display').innerText = `${tCarb.toFixed(1)}g`;
-            list.scrollTop = list.scrollHeight;
-        }
-
-        /* --- RECIPES (Replaced alert/prompt with Modals) --- */
-        function openRecipeModal() {
-            if(state.currentMeal.length === 0) return showModal("Empty Builder", "Add some ingredients to the builder before saving as a recipe.");
-            document.getElementById('recipe-name-input').value = '';
-            document.getElementById('recipe-prompt-modal').classList.remove('hidden');
-            document.getElementById('recipe-prompt-modal').classList.add('flex');
-            setTimeout(() => document.getElementById('recipe-prompt-content').classList.remove('scale-95'), 10);
-        }
-
-        function closeRecipeModal() {
-            document.getElementById('recipe-prompt-content').classList.add('scale-95');
-            setTimeout(() => {
-                document.getElementById('recipe-prompt-modal').classList.add('hidden');
-                document.getElementById('recipe-prompt-modal').classList.remove('flex');
-            }, 200);
-        }
-
-        function confirmSaveRecipe() {
-            const recipeName = document.getElementById('recipe-name-input').value.trim();
-            if(!recipeName) return;
-            
-            closeRecipeModal();
-
-            let tCal = 0, tPro = 0, tFat = 0, tCarb = 0;
-            state.currentMeal.forEach(item => { tCal += item.cal; tPro += item.pro; tFat += item.fat; tCarb += item.carb; });
-
-            const newRecipe = {
-                id: Date.now(), name: recipeName, cal: tCal, pro: tPro, fat: tFat, carb: tCarb,
-                items: JSON.parse(JSON.stringify(state.currentMeal))
-            };
-
-            state.recipes.push(newRecipe);
-            localStorage.setItem('savedRecipes', JSON.stringify(state.recipes));
-            populateRecipes();
-            showSysToast("Recipe Saved", `${recipeName} has been saved.`);
-        }
-
-        function populateRecipes() {
-            const loader = document.getElementById('recipe-loader');
-            if(!loader) return;
-            let html = '<option value="" disabled selected>Load Recipe</option>';
-            state.recipes.forEach(r => {
-                html += `<option value="${r.id}">${r.name} (${r.cal.toFixed(0)} kcal)</option>`;
-            });
-            loader.innerHTML = html;
-        }
-
-        function loadRecipe() {
-            const id = document.getElementById('recipe-loader').value;
-            const recipe = state.recipes.find(r => r.id == id);
-            if(recipe && recipe.items) {
-                recipe.items.forEach(item => {
-                    state.currentMeal.push({ ...item, id: Date.now() + Math.random() });
-                });
-                localStorage.setItem('cpfcDraftMeal', JSON.stringify(state.currentMeal));
-                renderMealList();
-                showSysToast("Recipe Loaded", `${recipe.name} added to builder.`);
-            }
-            document.getElementById('recipe-loader').value = ""; // reset dropdown
-        }
-
-        /* --- LOGGING & UNDO --- */
-        function triggerSubmitWithUndo() {
-            if(state.currentMeal.length === 0) return showModal("Empty Meal", "Add items before logging.");
-            pendingLogBackup = { mealItems: [...state.currentMeal], prevToday: JSON.parse(JSON.stringify(state.today)), prevWeekly: [...state.weeklyData] };
-
-            let tCal = 0, tPro = 0, tFat = 0, tCarb = 0;
-            state.currentMeal.forEach(item => { tCal += item.cal; tPro += item.pro; tFat += item.fat; tCarb += item.carb; });
-
-            state.today.cal += tCal; state.today.pro += tPro; state.today.fat += tFat; state.today.carb += tCarb;
-            let trackerDate = new Date();
-            let todayIdx = trackerDate.getDay() === 0 ? 6 : trackerDate.getDay() - 1;
-            state.weeklyData[todayIdx] = state.today.cal;
-
-            state.historyLogs.unshift({
-                date: new Date().toLocaleDateString(), time: new Date().toLocaleTimeString(),
-                items: [...state.currentMeal], totalCal: tCal
-            });
-
-            saveStateToLocal();
-            state.currentMeal = [];
-            localStorage.setItem('cpfcDraftMeal', JSON.stringify([]));
-            
-            renderMealList(); renderDashboard(); renderAnalytics();
-
-            const toast = document.getElementById('undo-toast');
-            toast.classList.remove('hidden'); toast.classList.add('toast-enter');
-            clearTimeout(undoTimeout);
-            undoTimeout = setTimeout(commitMealLog, 5000); 
-        }
-
-        function undoMealLog() {
-            clearTimeout(undoTimeout);
-            state.currentMeal = [...pendingLogBackup.mealItems];
-            state.today = JSON.parse(JSON.stringify(pendingLogBackup.prevToday));
-            state.weeklyData = [...pendingLogBackup.prevWeekly];
-            state.historyLogs.shift(); 
-            
-            localStorage.setItem('cpfcDraftMeal', JSON.stringify(state.currentMeal));
-            saveStateToLocal();
-            
-            renderMealList(); renderDashboard(); renderAnalytics();
-            document.getElementById('undo-toast').classList.add('hidden');
-            pendingLogBackup = null;
-        }
-
-        function commitMealLog() {
-            document.getElementById('undo-toast').classList.add('hidden');
-            const logsToPush = pendingLogBackup.mealItems.map(item => ({
-                type: 'Food', item: item.name, grams: item.grams, 
-                cal: item.cal, pro: item.pro, fat: item.fat, carb: item.carb
-            }));
-            sendToBackend(logsToPush, null);
-            pendingLogBackup = null;
-        }
-
-        function logWater() {
-            const amount = parseInt(document.getElementById('water-input').value);
-            if (!amount || amount <= 0) return;
-            state.today.water += amount; saveStateToLocal();
-            document.getElementById('water-text').innerText = state.today.water;
-            sendToBackend([{ type: 'Water', item: 'Water', grams: amount, cal: 0, pro: 0, fat: 0 }], null);
-            document.getElementById('water-input').value = ''; 
-        }
-
-        function logMetrics() {
-            const weight = parseFloat(document.getElementById('metric-weight').value) || 0;
-            const bf = parseFloat(document.getElementById('metric-bf').value) || 0;
-            
-            if (!weight && !bf) return showModal("Missing Info", "Please enter your weight or body fat.");
-            
-            sendToBackend(null, [{ weight: weight, bodyFat: bf }]);
-            
-            document.getElementById('metric-weight').value = '';
-            document.getElementById('metric-bf').value = '';
-            
-            showSysToast("Metrics Saved", `Logged to cloud.`);
-            setTimeout(() => syncHistoryFromCloud(false), 2000);
-        }
-
-        /* ========================
-           AI COACH VISION CHAT 
-           ======================== */
-        let chatBase64Image = null;
-        let chatMimeType = null;
-
+        // --- AI COACH CHAT LOGIC ---
+        let chatBase64Image = null; let chatMimeType = null;
         function fileToBase64(file) {
             return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.readAsDataURL(file);
-                reader.onload = () => resolve(reader.result);
-                reader.onerror = error => reject(error);
+                const reader = new FileReader(); reader.readAsDataURL(file);
+                reader.onload = () => resolve(reader.result); reader.onerror = error => reject(error);
             });
         }
 
         async function handleChatImageSelection(event) {
-            const file = event.target.files[0];
-            if(!file) return;
+            const file = event.target.files[0]; if(!file) return;
             chatMimeType = file.type;
             const fullBase64 = await fileToBase64(file);
             chatBase64Image = fullBase64.split(',')[1];
-            
-            document.getElementById('chat-img-preview').src = fullBase64;
-            document.getElementById('chat-img-preview-container').classList.remove('hidden');
+            document.getElementById('chat-img-preview').src = fullBase64; document.getElementById('chat-img-preview-container').classList.remove('hidden');
         }
 
         function clearChatImage() {
             chatBase64Image = null; chatMimeType = null;
-            document.getElementById('chat-img-preview-container').classList.add('hidden');
-            document.getElementById('chat-image').value = "";
+            document.getElementById('chat-img-preview-container').classList.add('hidden'); document.getElementById('chat-image').value = "";
         }
 
         async function sendChatMessage() {
-            const input = document.getElementById('chat-input');
-            const msg = input.value.trim();
+            const input = document.getElementById('chat-input'); const msg = input.value.trim();
             if(!msg && !chatBase64Image) return;
-
-            const storedKey = localStorage.getItem('geminiApiKey');
-
+            const storedKey = document.getElementById('gemini-key').value;
             const chatBox = document.getElementById('chat-box');
+            
             let userHTML = `<div class="bg-indigo-600 text-white p-4 rounded-2xl rounded-tr-sm max-w-[85%] text-sm">`;
             if (chatBase64Image) userHTML += `<img src="data:${chatMimeType};base64,${chatBase64Image}" class="w-full h-32 object-cover rounded-lg mb-2 border border-white/20">`;
             if (msg) userHTML += msg;
             userHTML += `</div>`;
-
             chatBox.innerHTML += `<div class="flex justify-end">${userHTML}</div>`;
-            input.value = '';
-            chatBox.scrollTop = chatBox.scrollHeight;
+            input.value = ''; chatBox.scrollTop = chatBox.scrollHeight;
 
-            const context = `You are an elite AI Nutrition Coach. The user tracks their macros strictly. 
-            If they upload a photo or describe a meal, analyze the ingredients accurately based on standard fitness portion sizes.
-            Reply conversationally and professionally. 
-            CRITICAL: If you estimate macros for a meal in this chat, you MUST append a JSON object at the very end of your response exactly like this (use backticks or simple text):
-            {"name":"Your Meal Name","cal":num,"pro":num,"fat":num,"carb":num}`;
-
+            const context = `You are an AI Nutrition Coach. Provide macro estimates if asked. If you estimate macros for a meal, you MUST append a JSON object at the very end exactly like this: {"name":"Meal Name","cal":num,"pro":num,"fat":num,"carb":num}`;
             const loadingId = 'load-' + Date.now();
             chatBox.innerHTML += `<div id="${loadingId}" class="flex justify-start"><div class="bg-indigo-900/40 text-indigo-300 p-4 rounded-2xl animate-pulse">Analyzing...</div></div>`;
             chatBox.scrollTop = chatBox.scrollHeight;
@@ -1412,265 +1074,188 @@
             if (chatBase64Image) contents[0].parts.push({ inlineData: { data: chatBase64Image, mimeType: chatMimeType } });
 
             try {
-                // Do not enforce JSON Mime Type for chat, since we want conversational text too
                 const reply = await callGeminiAPI(contents, storedKey, false); 
                 document.getElementById(loadingId).remove();
                 
-                let displayReply = reply;
-                let payload = null;
-                
-                // Attempt to extract the JSON block if the model provided it
+                let displayReply = reply; let payload = null;
                 const match = reply.match(/\{[\s\S]*\}/);
                 if (match) {
-                    try {
-                        payload = JSON.parse(match[0]);
-                        // Remove the JSON string from the display message
-                        displayReply = reply.replace(match[0], '').replace(/```json/gi, '').replace(/```/g, '').trim();
-                    } catch(e) { console.log("AI format error", e); }
+                    try { payload = JSON.parse(match[0]); displayReply = reply.replace(match[0], '').replace(/```json/gi, '').replace(/```/g, '').trim(); } catch(e) {}
                 }
 
-                let replyHTML = `
+                chatBox.innerHTML += `
                 <div class="flex justify-start">
                     <div class="bg-indigo-900/40 text-indigo-100 p-4 rounded-2xl rounded-tl-sm max-w-[85%] text-sm border border-indigo-500/20">
                         ${displayReply.replace(/\n/g, '<br>')}
-                        ${payload ? `<button onclick='logChatMeal(${JSON.stringify(payload)})' class="mt-4 w-full bg-white text-black font-bold py-2 rounded-xl flex justify-center items-center gap-2">➕ Log to Dashboard</button>` : ''}
+                        ${payload ? `<button onclick='window.logChatMeal(${JSON.stringify(payload)})' class="mt-4 w-full bg-white text-black font-bold py-2 rounded-xl">➕ Log to Dashboard</button>` : ''}
                     </div>
                 </div>`;
-                
-                chatBox.innerHTML += replyHTML;
-                chatBox.scrollTop = chatBox.scrollHeight;
-                clearChatImage();
-            } catch(e) {
-                document.getElementById(loadingId).innerText = `Error: ${e.message}`;
-            }
+                chatBox.scrollTop = chatBox.scrollHeight; clearChatImage();
+            } catch(e) { document.getElementById(loadingId).innerText = `Error: ${e.message}`; }
         }
 
-        function logChatMeal(data) {
+        window.logChatMeal = (data) => {
             state.currentMeal.push({ id: Date.now(), name: data.name, grams: 1, cal: data.cal, pro: data.pro, fat: data.fat, carb: data.carb });
-            triggerSubmitWithUndo(); 
-            showSysToast("AI Logged", `${data.name} added to today's dashboard.`);
-            switchTab('dashboard');
+            commitMealLog(); showSysToast("Logged", `${data.name} synced directly.`);
         }
 
-        /* --- DASH & ANALYTICS UI --- */
-        function renderDashboard() {
-            const mults = getDayMultipliers();
-            const gCal = state.goals.cal * mults.cal;
-            const gPro = state.goals.pro * mults.pro;
-            const gFat = state.goals.fat * mults.fat;
-            const gCarb = state.goals.carb * mults.carb;
-
-            const updateBar = (id, current, max) => {
-                let perc = Math.min((current / max) * 100, 100) || 0;
-                document.getElementById(`${id}-bar`).style.width = `${perc}%`;
-                document.getElementById(`${id}-text`).innerText = current.toFixed(0);
-                document.getElementById(`${id}-max`).innerText = `/ ${max.toFixed(0)}${id==='cal'?' kcal':'g'}`;
-            }
-            updateBar('cal', state.today.cal, gCal);
-            updateBar('pro', state.today.pro, gPro);
-            updateBar('fat', state.today.fat, gFat);
-            updateBar('carb', state.today.carb, gCarb);
-            document.getElementById('water-text').innerText = state.today.water;
-        }
-
-        function renderAnalytics() {
-            // 1. Chart
-            const chart = document.getElementById('weekly-chart');
-            const labels = document.getElementById('weekly-labels');
-            const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-            const maxVal = Math.max(...state.weeklyData, state.goals.cal) + 400;
-
-            chart.innerHTML = ''; labels.innerHTML = '';
-            state.weeklyData.forEach((val, i) => {
-                const heightPerc = (val / maxVal) * 100;
-                chart.innerHTML += `
-                    <div class="w-full mx-2 bg-black/50 rounded-t-xl relative flex flex-col justify-end h-full border border-white/5 border-b-0">
-                        <div class="w-full bg-gradient-to-t from-indigo-500 to-cyan-500 rounded-t-xl transition-all shadow-inner" style="height: ${heightPerc}%;"></div>
-                    </div>`;
-                let todayIdx = new Date().getDay() === 0 ? 6 : new Date().getDay() - 1;
-                labels.innerHTML += `<span class="w-full text-center ${i === todayIdx ? 'text-indigo-400 font-black' : 'text-zinc-500'}">${days[i]}</span>`;
+        // --- GENERAL LOGIC ---
+        function switchTab(targetId) {
+            document.querySelectorAll('.tab-section').forEach(sec => sec.classList.remove('active-tab'));
+            setTimeout(() => document.getElementById(`tab-${targetId}`).classList.add('active-tab'), 50);
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('active'); if(btn.dataset.target === targetId) btn.classList.add('active');
+                if(btn.dataset.target === 'database') b.classList.toggle('text-emerald-400', b.dataset.target !== targetId); 
             });
+            const tabTitles = { 'dashboard': 'Dashboard', 'log': 'Log Meal', 'coach': 'AI Coach', 'analytics': 'Statistics', 'database': 'Database Monitor', 'settings': 'Configuration' };
+            document.getElementById('page-title').innerText = tabTitles[targetId];
+        }
 
-            // 2. History
-            const historyContainer = document.getElementById('history-container');
-            historyContainer.innerHTML = '';
-            if(state.historyLogs.length === 0) {
-                historyContainer.innerHTML = `<p class="text-zinc-500 text-sm">No recent logs found.</p>`;
-            } else {
-                state.historyLogs.forEach(log => {
-                    const itemsList = log.items.map(i => `<div class="text-[11px] text-zinc-400">• ${i.name} (${i.cal.toFixed(0)} kcal)</div>`).join('');
-                    historyContainer.innerHTML += `
-                    <div class="bg-black/40 border border-white/5 p-4 rounded-xl">
-                        <div class="flex justify-between items-center mb-2">
-                            <span class="text-sm font-bold text-white">${log.date} <span class="text-zinc-500 text-[10px] ml-2">${log.time}</span></span>
-                            <span class="text-xs font-black text-indigo-400">${log.totalCal.toFixed(0)} kcal</span>
-                        </div>
-                        ${itemsList}
-                    </div>`;
-                });
+        async function commitMealLog() {
+            if(!currentUserUid || state.currentMeal.length === 0) return showModal("Empty Meal", "Add items first.");
+            const logsRef = collection(db, basePathPrefix, currentUserUid, 'logs');
+            for(const item of state.currentMeal) {
+                await addDoc(logsRef, { type: 'Food', item: item.name, grams: item.grams, cal: item.cal, pro: item.pro, fat: item.fat, carb: item.carb, shiftDateStr: globalShiftDateStr, timestamp: Date.now() });
             }
+            state.currentMeal = []; renderMealList();
+            showSysToast("Firebase Logged", "Data updated in Database."); switchTab('dashboard');
+        }
 
-            // 3. Weight
-            const weightArr = state.weightHistory;
-            const svgPath = document.getElementById('weight-svg-path');
-            const dotsContainer = document.getElementById('weight-dots-container');
-            svgPath.innerHTML = ''; dotsContainer.innerHTML = '';
+        async function windowLogWater() {
+            if(!currentUserUid) return;
+            const amount = parseInt(document.getElementById('water-input').value); if (!amount || amount <= 0) return;
+            await addDoc(collection(db, basePathPrefix, currentUserUid, 'logs'), { type: 'Water', item: 'Water', grams: amount, shiftDateStr: globalShiftDateStr, timestamp: Date.now() });
+            document.getElementById('water-input').value = ''; showSysToast("Water Saved", "Logged to Firebase.");
+        }
 
-            if(weightArr.length > 1) {
-                const maxW = Math.max(...weightArr) + 2; const minW = Math.min(...weightArr) - 2; 
-                const range = maxW - minW; let pathData = "M ";
-                
-                weightArr.forEach((w, i) => {
-                    const xPerc = (i / (weightArr.length - 1)) * 100;
-                    const yPerc = 100 - (((w - minW) / range) * 100);
-                    pathData += `${xPerc},${yPerc} `; if(i < weightArr.length - 1) pathData += "L ";
-                    dotsContainer.innerHTML += `
-                        <div class="absolute w-2.5 h-2.5 bg-emerald-400 rounded-full transform -translate-x-1/2 -translate-y-1/2 shadow-lg border-2 border-black group hover:scale-150 transition-transform" style="left: ${xPerc}%; top: ${yPerc}%;">
-                            <span class="absolute bottom-4 left-1/2 -translate-x-1/2 bg-white text-black px-2 py-1 rounded text-[10px] font-bold opacity-0 group-hover:opacity-100 z-50">${w} kg</span>
-                        </div>`;
-                });
-                svgPath.innerHTML = `<path d="${pathData}" fill="none" stroke="#34d399" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>`;
+        async function windowLogMetrics() {
+            if(!currentUserUid) return;
+            const weight = parseFloat(document.getElementById('metric-weight').value) || 0; const bf = parseFloat(document.getElementById('metric-bf').value) || 0;
+            if (!weight && !bf) return showModal("Missing Info", "Enter weight/BF.");
+            await addDoc(collection(db, basePathPrefix, currentUserUid, 'metrics'), { weight: weight, bodyFat: bf, shiftDateStr: globalShiftDateStr, timestamp: Date.now() });
+            document.getElementById('metric-weight').value = ''; document.getElementById('metric-bf').value = ''; showSysToast("Metrics Saved", "Logged to Firebase.");
+        }
+
+        function windowSaveSettings() {
+            state.goals.cal = parseInt(document.getElementById('goal-cal').value) || 2500; state.goals.pro = parseInt(document.getElementById('goal-pro').value) || 150; state.goals.fat = parseInt(document.getElementById('goal-fat').value) || 80; state.goals.carb = parseInt(document.getElementById('goal-carb').value) || 200;
+            state.shiftStart = document.getElementById('shift-start').value || "00:00"; state.dayMode = document.getElementById('day-mode-select').value;
+            saveCloudSettings(); renderDashboard(); 
+        }
+
+        // Search & Stage logic
+        let searchTOut;
+        window.debounceSearch = () => { clearTimeout(searchTOut); searchTOut = setTimeout(handleSearch, 300); };
+        
+        async function handleSearch() {
+            const query = document.getElementById('food-search').value.toLowerCase();
+            const dropdown = document.getElementById('search-dropdown'); const storedKey = document.getElementById('usda-key').value;
+            if (query.length < 3) { dropdown.classList.add('hidden'); return; }
+            dropdown.innerHTML = `<div class="p-5 text-sm text-indigo-400 text-center animate-pulse">Searching...</div>`; dropdown.classList.remove('hidden');
+
+            let html = ""; let found = false;
+            const local = localPHDatabase.filter(food => food.name.toLowerCase().includes(query));
+            if (local.length > 0) {
+                found = true;
+                html += local.map(f => `<div onclick='window.stageFood(${JSON.stringify(f)})' class="p-4 hover:bg-white/10 cursor-pointer border-b border-white/5"><div class="text-sm font-bold text-white">${f.name}</div><div class="text-[11px] font-bold text-indigo-300">${f.cal} kcal | ${f.pro}P | ${f.fat}F | ${f.carb}C</div></div>`).join('');
             }
-        }
-
-        /* --- BACKEND SYNC --- */
-        function sendToBackend(foodLogs, metricLogs) {
-            const url = localStorage.getItem('gasUrl');
-            const payload = {
-                shiftStartTime: document.getElementById('shift-start').value || "00:00",
-                timestamp: new Date().toISOString(),
-                logs: foodLogs || [],
-                metrics: metricLogs || [],
-                profile: { goals: state.goals, mode: state.dayMode }
-            };
-            
-            if(!url || url.includes("PASTE_YOUR")) return;
-
-            if(!navigator.onLine) {
-                state.offlineQueue.push(payload);
-                localStorage.setItem('cpfcOfflineQueue', JSON.stringify(state.offlineQueue));
-                updateSyncUI(); return;
+            if(storedKey) {
+                try {
+                    const res = await fetch(`https://api.nal.usda.gov/fdc/v1/foods/search?query=${query}&api_key=${storedKey}&pageSize=3`);
+                    const data = await res.json();
+                    if(data.foods) {
+                        found = true;
+                        html += data.foods.map(f => {
+                            const getV = (id) => { const n = f.foodNutrients.find(x => x.nutrientId === id); return n ? n.value : 0; };
+                            const obj = {name: f.description, cal: getV(1008), pro: getV(1003), fat: getV(1004), carb: getV(1005)};
+                            return `<div onclick='window.stageFood(${JSON.stringify(obj)})' class="p-4 hover:bg-white/10 cursor-pointer border-b border-white/5"><div class="text-sm font-bold text-white">${obj.name}</div><div class="text-[11px] font-bold text-green-400">${obj.cal.toFixed(0)} kcal | ${obj.pro.toFixed(1)}P | ${obj.fat.toFixed(1)}F | ${obj.carb.toFixed(1)}C</div></div>`;
+                        }).join('');
+                    }
+                } catch (e) {}
             }
-
-            fetch(url, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
-            .then(() => checkOfflineQueue())
-            .catch(e => { state.offlineQueue.push(payload); localStorage.setItem('cpfcOfflineQueue', JSON.stringify(state.offlineQueue)); updateSyncUI(); });
+            if (!found) html = `<div class="p-6 text-center text-sm text-zinc-400">No match found.</div>`;
+            dropdown.innerHTML = html;
         }
 
-        function checkOfflineQueue() {
-            const url = localStorage.getItem('gasUrl');
-            if(!url || state.offlineQueue.length === 0 || !navigator.onLine) return;
-            state.offlineQueue.forEach(payload => { fetch(url, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) }); });
-            state.offlineQueue = []; localStorage.setItem('cpfcOfflineQueue', JSON.stringify([])); updateSyncUI();
-        }
-
-        function forceCloudSync() {
-            if(!navigator.onLine) return showModal("Offline", "You must be online.");
-            syncHistoryFromCloud(true);
-        }
-
-        async function syncHistoryFromCloud(showFeedback = false) {
-            const url = localStorage.getItem('gasUrl');
-            if(!url || url.includes("PASTE_YOUR")) return;
-
+        async function forceAISearch() {
+            const query = document.getElementById('food-search').value; if(!query) return showModal("Empty", "Type food name.");
+            const storedKey = document.getElementById('gemini-key').value;
+            document.getElementById('search-dropdown').classList.remove('hidden'); document.getElementById('search-dropdown').innerHTML = `<div class="p-5 text-sm text-indigo-400 text-center animate-pulse">AI Estimating...</div>`;
             try {
-                const res = await fetch(url);
-                const data = await res.json();
-                
-                if (data.logs && Array.isArray(data.logs)) {
-                    let calcToday = { cal: 0, pro: 0, fat: 0, carb: 0, water: 0 };
-                    data.logs.forEach(row => {
-                        let rowDateStr = row[1]; let type = row[2]; let cal = parseFloat(row[5])||0; let pro = parseFloat(row[6])||0; let fat = parseFloat(row[7])||0; let carb = parseFloat(row[8])||0; let amount = parseFloat(row[4])||0;
-                        if (rowDateStr === globalShiftDateStr || new Date(rowDateStr).toLocaleDateString() === globalShiftDateStr) {
-                            if (type === 'Food') { calcToday.cal += cal; calcToday.pro += pro; calcToday.fat += fat; calcToday.carb += carb; }
-                            else if (type === 'Water') calcToday.water += amount;
-                        }
-                    });
-                    state.today = calcToday;
-                    let trackerDate = new Date(); let todayIdx = trackerDate.getDay() === 0 ? 6 : trackerDate.getDay() - 1;
-                    state.weeklyData[todayIdx] = state.today.cal; saveStateToLocal();
-                }
-
-                if (data.metrics && Array.isArray(data.metrics)) state.weightHistory = data.metrics.map(m => parseFloat(m[2])).filter(w => w > 0);
-                
-                if (data.profile) {
-                    if (data.profile.goals) {
-                        state.goals = data.profile.goals;
-                        localStorage.setItem('cpfcGoals', JSON.stringify(state.goals));
-                        document.getElementById('goal-cal').value = state.goals.cal;
-                        document.getElementById('goal-pro').value = state.goals.pro;
-                        document.getElementById('goal-fat').value = state.goals.fat;
-                        document.getElementById('goal-carb').value = state.goals.carb;
-                    }
-                    if (data.profile.mode) {
-                        state.dayMode = data.profile.mode;
-                        localStorage.setItem('cpfcDayMode', state.dayMode);
-                        document.getElementById('day-mode-select').value = state.dayMode;
-                    }
-                }
-
-                renderDashboard(); renderAnalytics(); updateSyncUI();
-                if (showFeedback) showSysToast("Sync Successful", "Local data updated from the cloud.");
-            } catch (err) { 
-                updateSyncUI(); 
-                if (showFeedback) showModal("Sync Error", "Could not fetch from GAS backend. Check your URL or CORS settings. Reason: " + err.message);
-            }
+                const prompt = `Return standard nutritional values for 100g of "${query}". JSON ONLY: {"name":"Food","cal":100,"pro":20,"fat":5,"carb":10}`;
+                const text = await callGeminiAPI([{ role: "user", parts: [{ text: prompt }] }], storedKey, true);
+                const f = safeParseJSON(text);
+                document.getElementById('search-dropdown').innerHTML = `<div class="bg-purple-900/50 px-4 py-1 text-[10px] font-black text-purple-300">AI Estimate</div><div onclick='window.stageFood(${JSON.stringify(f)})' class="p-4 hover:bg-white/10 cursor-pointer"><div class="text-sm font-bold text-white">${f.name}</div><div class="text-[11px] font-bold text-purple-300">${f.cal} kcal | ${f.pro}P | ${f.fat}F | ${f.carb}C</div></div>`;
+            } catch (e) { document.getElementById('search-dropdown').innerHTML = `<div class="p-5 text-sm text-red-400">Failed: ${e.message}</div>`; }
         }
 
-        function updateSyncUI() {
-            const statusIcon = document.getElementById('sync-status');
-            if (!navigator.onLine || state.offlineQueue.length > 0) {
-                statusIcon.className = "flex items-center justify-center text-orange-400 cursor-pointer";
-                statusIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>`;
+        window.stageFood = (f) => {
+            selectedBaseFood = f; document.getElementById('search-dropdown').classList.add('hidden'); document.getElementById('food-search').value = '';
+            document.getElementById('log-entry-mode').value = 'standard'; window.toggleLogMode();
+            document.getElementById('stage-name').value = f.name; document.getElementById('stage-grams').value = 100;
+            if(!document.getElementById('offline-toggle').checked) { document.getElementById('offline-toggle').checked = true; window.toggleOnlineMode(); }
+            window.calculateStaged();
+        };
+
+        window.calculateStaged = () => {
+            if(!selectedBaseFood || !document.getElementById('offline-toggle').checked) return;
+            const factor = (parseFloat(document.getElementById('stage-grams').value) || 0) / 100;
+            document.getElementById('stage-cal').value = (selectedBaseFood.cal * factor).toFixed(0); document.getElementById('stage-pro').value = (selectedBaseFood.pro * factor).toFixed(1); document.getElementById('stage-fat').value = (selectedBaseFood.fat * factor).toFixed(1); document.getElementById('stage-carb').value = (selectedBaseFood.carb * factor).toFixed(1);
+        };
+
+        window.addStagedToMeal = async () => {
+            const name = document.getElementById('stage-name').value; let grams = parseFloat(document.getElementById('stage-grams').value) || 0;
+            const isOffline = document.getElementById('offline-toggle').checked;
+            if(!name || grams <= 0) return;
+            let cal=0, pro=0, fat=0, carb=0;
+            if (isOffline) {
+                cal = parseFloat(document.getElementById('stage-cal').value)||0; pro = parseFloat(document.getElementById('stage-pro').value)||0; fat = parseFloat(document.getElementById('stage-fat').value)||0; carb = parseFloat(document.getElementById('stage-carb').value)||0;
             } else {
-                statusIcon.className = "flex items-center justify-center text-green-400 cursor-pointer";
-                statusIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/><path d="m9 15 3-3 3 3"/><path d="M12 12v9"/></svg>`;
+                document.getElementById('stage-cal').value = "...";
+                try {
+                    const text = await callGeminiAPI([{ role: "user", parts: [{ text: `Calculate exact macros for ${grams}g of "${name}". JSON ONLY: {"cal":100,"pro":20,"fat":5,"carb":10}` }] }], document.getElementById('gemini-key').value, true);
+                    const d = safeParseJSON(text); cal=d.cal||0; pro=d.pro||0; fat=d.fat||0; carb=d.carb||0;
+                } catch(e) { return showModal("AI Error", e.message); }
             }
-        }
+            state.currentMeal.push({ id: Date.now(), name, grams, cal, pro, fat, carb }); renderMealList();
+            document.getElementById('stage-name').value = ''; document.getElementById('stage-grams').value = '100';
+            if(isOffline) { ['stage-cal', 'stage-pro', 'stage-fat', 'stage-carb'].forEach(id => document.getElementById(id).value = '0'); }
+        };
 
-        /* --- UTILS --- */
-        function saveSettings() {
-            state.goals.cal = parseInt(document.getElementById('goal-cal').value) || 2500;
-            state.goals.pro = parseInt(document.getElementById('goal-pro').value) || 150;
-            state.goals.fat = parseInt(document.getElementById('goal-fat').value) || 80;
-            state.goals.carb = parseInt(document.getElementById('goal-carb').value) || 200;
-            
-            localStorage.setItem('cpfcGoals', JSON.stringify(state.goals));
-            localStorage.setItem('gasUrl', document.getElementById('gas-url').value);
-            localStorage.setItem('geminiApiKey', document.getElementById('gemini-key').value);
-            localStorage.setItem('usdaApiKey', document.getElementById('usda-key').value);
-            localStorage.setItem('shiftStart', document.getElementById('shift-start').value);
-            
-            sendToBackend(null, null);
+        window.removeMealItem = (id) => { state.currentMeal = state.currentMeal.filter(i => i.id !== id); renderMealList(); };
+        
+        // Export to window
+        window.switchTab = switchTab; window.changeDayMode = () => { state.dayMode = document.getElementById('day-mode-select').value; windowSaveSettings(); };
+        window.toggleLogMode = () => { let m = document.getElementById('log-entry-mode').value; document.getElementById('standard-entry-container').classList.toggle('hidden', m !== 'standard'); document.getElementById('chat-entry-container').classList.toggle('hidden', m !== 'chat'); };
+        window.toggleOnlineMode = () => {
+            let off = document.getElementById('offline-toggle').checked; document.getElementById('mode-label').innerText = off ? "Manual Offline" : "AI Online";
+            ['stage-cal', 'stage-pro', 'stage-fat', 'stage-carb'].forEach(id => { document.getElementById(id).classList.toggle('input-disabled', !off); document.getElementById(id).value = off ? "0" : "Auto"; });
+        };
+        window.clearBaseFood = () => { selectedBaseFood = null; }; window.forceAISearch = forceAISearch;
+        window.generateSmartMacros = windowGenerateSmartMacros; window.processChatCalculation = windowProcessChatCalculation;
+        window.handleChatImageSelection = handleChatImageSelection; window.clearChatImage = clearChatImage; window.sendChatMessage = sendChatMessage;
+        window.commitMealLog = commitMealLog; window.logWater = windowLogWater; window.logMetrics = windowLogMetrics; window.saveSettings = windowSaveSettings;
+        window.openRecipeModal = () => { document.getElementById('recipe-prompt-modal').classList.remove('hidden'); document.getElementById('recipe-prompt-modal').classList.add('flex'); };
+        window.closeRecipeModal = () => { document.getElementById('recipe-prompt-modal').classList.add('hidden'); document.getElementById('recipe-prompt-modal').classList.remove('flex'); };
+        window.confirmSaveRecipe = async () => {
+            if(!currentUserUid) return; const name = document.getElementById('recipe-name-input').value.trim(); if(!name) return;
+            window.closeRecipeModal(); let tc=0, tp=0, tf=0, tcb=0; state.currentMeal.forEach(i => { tc+=i.cal; tp+=i.pro; tf+=i.fat; tcb+=i.carb; });
+            await addDoc(collection(db, basePathPrefix, currentUserUid, 'recipes'), { name, cal: tc, pro: tp, fat: tf, carb: tcb, items: state.currentMeal }); showSysToast("Saved", "Recipe stored.");
+        };
+        window.loadRecipe = () => {
+            const id = document.getElementById('recipe-loader').value; const r = state.recipes.find(x => x.id == id);
+            if(r && r.items) { r.items.forEach(i => state.currentMeal.push({ ...i, id: Date.now() + Math.random() })); renderMealList(); } document.getElementById('recipe-loader').value = "";
+        };
+        function populateRecipes() { const loader = document.getElementById('recipe-loader'); if(!loader) return; let html = '<option value="" disabled selected>Load Recipe</option>'; state.recipes.forEach(r => { html += `<option value="${r.id}">${r.name}</option>`; }); loader.innerHTML = html; }
+        
+        window.openScanner = () => {
+            document.getElementById('scanner-modal').classList.remove('hidden'); document.getElementById('scanner-modal').classList.add('flex');
+            if(!html5QrcodeScanner) { html5QrcodeScanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: {width: 250, height: 250} }, false); }
+            html5QrcodeScanner.render((text) => { window.closeScanner(); document.getElementById('food-search').value = text; forceAISearch(); }, ()=>{});
+        };
+        window.closeScanner = () => { if(html5QrcodeScanner) html5QrcodeScanner.clear(); document.getElementById('scanner-modal').classList.add('hidden'); document.getElementById('scanner-modal').classList.remove('flex'); };
+        window.showModal = (t, m) => { document.getElementById('modal-title').innerText = t; document.getElementById('modal-msg').innerText = m; document.getElementById('custom-modal').classList.remove('hidden'); };
+        window.closeModal = () => document.getElementById('custom-modal').classList.add('hidden');
 
-            renderDashboard(); renderAnalytics(); checkShiftDay(new Date()); checkDailyReset();
-            showSysToast("Saved", "Configuration updated.");
-        }
-
-        function loadSettings() {
-            if(localStorage.getItem('cpfcGoals')) {
-                state.goals = JSON.parse(localStorage.getItem('cpfcGoals'));
-                document.getElementById('goal-cal').value = state.goals.cal;
-                document.getElementById('goal-pro').value = state.goals.pro;
-                document.getElementById('goal-fat').value = state.goals.fat;
-                document.getElementById('goal-carb').value = state.goals.carb;
-            }
-            if(localStorage.getItem('gasUrl')) document.getElementById('gas-url').value = localStorage.getItem('gasUrl');
-            if(localStorage.getItem('geminiApiKey')) document.getElementById('gemini-key').value = localStorage.getItem('geminiApiKey');
-            if(localStorage.getItem('usdaApiKey')) document.getElementById('usda-key').value = localStorage.getItem('usdaApiKey');
-            if(localStorage.getItem('shiftStart')) document.getElementById('shift-start').value = localStorage.getItem('shiftStart');
-        }
-
-        function showModal(title, msg) {
-            document.getElementById('modal-title').innerText = title; 
-            document.getElementById('modal-msg').innerText = msg;
-            document.getElementById('custom-modal').classList.remove('hidden');
-            setTimeout(() => document.getElementById('modal-content').classList.remove('scale-95'), 10);
-        }
-        function closeModal() {
-            document.getElementById('modal-content').classList.add('scale-95');
-            setTimeout(() => document.getElementById('custom-modal').classList.add('hidden'), 200);
-        }
     </script>
 </body>
 </html>
