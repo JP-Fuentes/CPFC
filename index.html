@@ -5,10 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#030712">
     
+    <!-- PWA Settings for "Add to Homescreen" App Experience -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="C.P.F.C.">
-    <link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI1MTIiIGhlaWdodD0iNTEyIiB2aWV3Qm94PSIwIDAgMjQgMjQiIGZpbGw9IiMwMzA3MTIiIHN0cm9rZT0iIzIyZDNlZSIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iMTEiLz48Y2lyY2xlIGN4PSIxMiIgY3k9IjEyIiByPSI4IiBzdHJva2Utb3BhY2l0eT0iMC4zIi8+PHBhdGggZD0iTTggN3Y0YTIgMiAwIDAgMCA0IDBWNyIvPjxwYXRoIGQ9Ik0xMCA3djExIi8+PGVsbGlwc2UgY3g9IjE2IiBjeT0iOCIgcng9IjIiIHJ5PSIzIi8+PHBhdGggZD0iTTE2IDExdjciLz48L3N2Zz4=">
+    <!-- Custom Crossed Spoon & Fork Logo -->
+    <link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI1MTIiIGhlaWdodD0iNTEyIiB2aWV3Qm94PSIwIDAgMjQgMjQiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzIyZDNlZSIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iMTEiIGZpbGw9IiMwMzA3MTIiIHN0cm9rZT0ibm9uZSIvPjxnIHRyYW5zZm9ybT0icm90YXRlKDQ1IDEyIDEyKSI+PHBhdGggZD0iTTkgNXY0YzAgMS42NiAxLjM0IDMgMyAzczMtMS4zNCAzLTNWNSIvPjxwYXRoIGQ9Ik0xMiAxMnY3Ii8+PHBhdGggZD0iTTEyIDV2NCIvPjwvZz48ZyB0cmFuc2Zvcm09InJvdGF0ZSgtNDUgMTIgMTIpIj48cGF0aCBkPSJNMTIgMTJ2NyIvPjxwYXRoIGQ9Ik0xMiA0YTMuNSAzLjUgMCAwIDAtMy41IDMuNWMwIDIuNSAzLjUgNC41IDMuNSA0LjVzMy41LTIgMy41LTQuNUEzLjUgMy41IDAgMCAwIDEyIDR6Ii8+PC9nPjwvc3ZnPg==">
     
     <title>C.P.F.C. Tracker System</title>
     
@@ -32,6 +34,7 @@
             font-family: 'Inter', sans-serif;
             -webkit-font-smoothing: antialiased;
             position: relative;
+            touch-action: manipulation; /* Optimizes touch tapping */
         }
 
         body::before {
@@ -66,8 +69,10 @@
         .fill-fat { background: linear-gradient(90deg, #f59e0b, #fcd34d); }
         .fill-carb { background: linear-gradient(90deg, #c084fc, #e879f9); }
 
+        /* Use text-[16px] threshold to prevent iOS Safari auto-zoom bugs */
         input[type="text"], input[type="number"], input[type="time"], input[type="url"], input[type="password"], select, textarea {
             background-color: rgba(0,0,0,0.3); border: 1px solid rgba(255, 255, 255, 0.1); color: white; transition: all 0.2s ease;
+            font-size: 16px !important; 
         }
         input:focus, select:focus, textarea:focus {
             outline: none; border-color: #818cf8; box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.2); background-color: rgba(0,0,0,0.5);
@@ -77,6 +82,8 @@
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 10px; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
         .search-results { max-height: 280px; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
 
@@ -114,17 +121,29 @@
 <body class="app-shell flex-col md:flex-row">
 
     <!-- NAVIGATION -->
-    <nav class="fixed bottom-0 w-full z-[500] bg-[#030712]/90 backdrop-blur-2xl border-t border-white/10 md:relative md:w-64 md:h-screen md:border-t-0 md:border-r md:flex md:flex-col p-2 md:p-5 transition-all">
+    <nav class="fixed bottom-0 w-full z-[500] bg-[#030712]/95 backdrop-blur-3xl border-t border-white/10 md:relative md:w-64 md:h-screen md:border-t-0 md:border-r md:flex md:flex-col p-2 md:p-5 transition-all">
         <div class="hidden md:block mb-10 px-4 mt-4">
             <h1 class="text-3xl font-black tracking-tight text-white flex items-center gap-4 font-brand">
                 <div class="w-14 h-14 rounded-2xl flex items-center justify-center bg-gradient-to-br from-cyan-500/20 to-indigo-500/20 border border-cyan-500/30 text-cyan-400 shrink-0">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="11"/><circle cx="12" cy="12" r="8" stroke-opacity="0.3"/><path d="M8 7v4a2 2 0 0 0 4 0V7"/><path d="M10 7v11"/><ellipse cx="16" cy="8" rx="2" ry="3"/><path d="M16 11v7"/></svg>
+                    <!-- New Crossed Spoon & Fork SVG Logo -->
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="11" stroke-opacity="0.3"/>
+                        <g transform="rotate(45 12 12)">
+                            <path d="M9 5v4c0 1.66 1.34 3 3 3s3-1.34 3-3V5"/>
+                            <path d="M12 12v7"/>
+                            <path d="M12 5v4"/>
+                        </g>
+                        <g transform="rotate(-45 12 12)">
+                            <path d="M12 12v7"/>
+                            <path d="M12 4a3.5 3.5 0 0 0-3.5 3.5c0 2.5 3.5 4.5 3.5 4.5s3.5-2 3.5-4.5A3.5 3.5 0 0 0 12 4z"/>
+                        </g>
+                    </svg>
                 </div>
                 C.P.F.C.
             </h1>
         </div>
 
-        <div class="flex justify-around md:flex-col md:space-y-2 md:justify-start overflow-x-auto no-scrollbar py-1 md:py-0">
+        <div class="flex justify-around md:flex-col md:space-y-2 md:justify-start overflow-x-auto no-scrollbar py-1 md:py-0 w-full">
             <button onclick="switchTab('dashboard')" class="nav-btn active flex flex-col md:flex-row items-center gap-1 md:gap-4 p-2 md:p-3.5 rounded-xl min-w-[60px] md:w-full md:justify-start" data-target="dashboard">
                 <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
                 <span class="text-[10px] md:text-sm font-bold">Dash</span>
@@ -141,7 +160,7 @@
                 <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m19 9-5 5-4-4-3 3"/></svg>
                 <span class="text-[10px] md:text-sm font-bold">Stats</span>
             </button>
-            <button onclick="switchTab('database')" class="nav-btn flex flex-col md:flex-row items-center gap-1 md:gap-4 p-2 md:p-3.5 rounded-xl min-w-[60px] md:w-full md:justify-start text-emerald-400" data-target="database">
+            <button onclick="switchTab('database')" class="nav-btn flex flex-col md:flex-row items-center gap-1 md:gap-4 p-2 md:p-3.5 rounded-xl min-w-[60px] md:w-full md:justify-start" data-target="database">
                 <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 15h18v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4z"/></svg>
                 <span class="text-[10px] md:text-sm font-bold">DB</span>
             </button>
@@ -186,7 +205,6 @@
                 <div class="flex justify-between items-center px-2">
                     <h3 class="text-sm font-black text-white/50 uppercase tracking-[0.25em]">Today's Overview</h3>
                     
-                    <!-- Day Cycling Dropdown -->
                     <select id="day-mode-select" onchange="changeDayMode()" class="text-xs font-bold uppercase tracking-widest px-4 py-2 rounded-full border border-indigo-500/40 bg-indigo-500/15 text-indigo-300 outline-none cursor-pointer appearance-none text-center">
                         <option value="workout" class="bg-gray-900">🏋️ Workout Day</option>
                         <option value="rest" class="bg-gray-900">🛋️ Rest Day</option>
@@ -451,11 +469,44 @@
                                 </div>
                             </div>
 
-                            <button onclick="commitMealLog()" class="w-full py-4 bg-white text-black active:scale-[0.98] transition-all rounded-xl text-base font-black flex justify-center items-center gap-2">
+                            <button onclick="triggerSubmitWithUndo()" class="w-full py-4 bg-white text-black active:scale-[0.98] transition-all rounded-xl text-base font-black flex justify-center items-center gap-2">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
-                                Log Meal to Firebase
+                                Log Meal to System
                             </button>
                         </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- DATABASE TAB -->
+            <section id="tab-database" class="tab-section max-w-6xl">
+                <div class="card p-6 md:p-8 flex flex-col h-[80vh]">
+                    <div class="flex justify-between items-center mb-6 shrink-0">
+                        <h2 class="text-sm font-black text-white/50 uppercase tracking-[0.2em]">Firestore Database Monitor</h2>
+                        <div class="bg-indigo-500/20 text-indigo-300 px-3 py-1 rounded-full text-xs font-bold border border-indigo-500/30 flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span> Live Sync
+                        </div>
+                    </div>
+                    
+                    <div class="flex-1 overflow-x-auto overflow-y-auto rounded-xl border border-white/10 bg-black/40">
+                        <table class="w-full text-left border-collapse db-table text-sm whitespace-nowrap">
+                            <thead>
+                                <tr class="text-zinc-400 uppercase text-[10px] tracking-widest font-black">
+                                    <th class="p-4 border-b border-white/10">Date & Time</th>
+                                    <th class="p-4 border-b border-white/10">Type</th>
+                                    <th class="p-4 border-b border-white/10">Item Name</th>
+                                    <th class="p-4 border-b border-white/10">Amount</th>
+                                    <th class="p-4 border-b border-white/10 text-indigo-400">Kcal</th>
+                                    <th class="p-4 border-b border-white/10 text-blue-400">Pro</th>
+                                    <th class="p-4 border-b border-white/10 text-orange-400">Fat</th>
+                                    <th class="p-4 border-b border-white/10 text-purple-400">Carb</th>
+                                    <th class="p-4 border-b border-white/10 text-center">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="db-table-body" class="text-white font-medium text-xs md:text-sm">
+                                <!-- Populated dynamically by Firebase snapshot -->
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </section>
@@ -530,39 +581,6 @@
                                 Send
                             </button>
                         </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- DATABASE TAB (NEW) -->
-            <section id="tab-database" class="tab-section max-w-6xl">
-                <div class="card p-6 md:p-8 flex flex-col h-[80vh]">
-                    <div class="flex justify-between items-center mb-6 shrink-0">
-                        <h2 class="text-sm font-black text-white/50 uppercase tracking-[0.2em]">Firestore Database Monitor</h2>
-                        <div class="bg-indigo-500/20 text-indigo-300 px-3 py-1 rounded-full text-xs font-bold border border-indigo-500/30 flex items-center gap-2">
-                            <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span> Live Sync
-                        </div>
-                    </div>
-                    
-                    <div class="flex-1 overflow-x-auto overflow-y-auto rounded-xl border border-white/10 bg-black/40">
-                        <table class="w-full text-left border-collapse db-table text-sm whitespace-nowrap">
-                            <thead>
-                                <tr class="text-zinc-400 uppercase text-[10px] tracking-widest font-black">
-                                    <th class="p-4 border-b border-white/10">Date & Time</th>
-                                    <th class="p-4 border-b border-white/10">Type</th>
-                                    <th class="p-4 border-b border-white/10">Item Name</th>
-                                    <th class="p-4 border-b border-white/10">Amount</th>
-                                    <th class="p-4 border-b border-white/10 text-indigo-400">Kcal</th>
-                                    <th class="p-4 border-b border-white/10 text-blue-400">Pro</th>
-                                    <th class="p-4 border-b border-white/10 text-orange-400">Fat</th>
-                                    <th class="p-4 border-b border-white/10 text-purple-400">Carb</th>
-                                    <th class="p-4 border-b border-white/10 text-center">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody id="db-table-body" class="text-white font-medium text-xs md:text-sm">
-                                <!-- Populated dynamically by Firebase snapshot -->
-                            </tbody>
-                        </table>
                     </div>
                 </div>
             </section>
@@ -682,6 +700,14 @@
         </div>
     </div>
 
+    <div id="undo-toast" class="fixed bottom-24 left-1/2 -translate-x-1/2 z-[600] hidden">
+        <div class="bg-white text-black px-6 py-4 rounded-2xl font-black shadow-lg flex items-center gap-4">
+            <span>✅ Logged!</span>
+            <div class="w-px h-5 bg-black/20"></div>
+            <button onclick="undoMealLog()" class="text-red-500 hover:text-red-700 underline font-bold active:scale-95 transition-all">UNDO</button>
+        </div>
+    </div>
+
     <div id="sys-toast" class="fixed top-24 right-4 z-[9999] transform translate-x-[120%] opacity-0 transition-all duration-300 ease-out flex items-center gap-3 p-4 rounded-2xl shadow-xl border max-w-sm bg-indigo-900/90 border-indigo-500/50">
         <div id="sys-toast-icon" class="w-8 h-8 rounded-full flex items-center justify-center shrink-0 bg-indigo-500/20 text-indigo-400">✓</div>
         <div>
@@ -747,6 +773,8 @@
         let globalShiftDateStr = "";
         let searchTimeout = null;
         let html5QrcodeScanner = null;
+        let undoTimeout = null;
+        let pendingLogBackup = null;
 
         // --- AUTHENTICATION ---
         const initAuth = async () => {
@@ -774,6 +802,37 @@
             toggleOnlineMode();
             renderMealList();
         });
+
+        function startLiveClock() {
+            function updateClock() {
+                const now = new Date();
+                document.getElementById('live-time').innerText = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+                document.getElementById('live-date').innerText = now.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+                checkShiftDay(now);
+            }
+            updateClock(); setInterval(updateClock, 1000);
+        }
+
+        function checkShiftDay(now) {
+            const shiftTime = state.shiftStart || "00:00";
+            const shiftHour = parseInt(shiftTime.split(':')[0]);
+            const shiftMin = parseInt(shiftTime.split(':')[1]);
+            let trackerDate = new Date(now);
+            if(now.getHours() < shiftHour || (now.getHours() === shiftHour && now.getMinutes() < shiftMin)) {
+                trackerDate.setDate(trackerDate.getDate() - 1);
+            }
+            globalShiftDateStr = trackerDate.toLocaleDateString();
+        }
+
+        let sysToastTimer;
+        window.showSysToast = (title, msg) => {
+            const toast = document.getElementById('sys-toast');
+            document.getElementById('sys-toast-title').innerText = title;
+            document.getElementById('sys-toast-msg').innerText = msg;
+            toast.classList.remove('translate-x-[120%]', 'opacity-0');
+            clearTimeout(sysToastTimer);
+            sysToastTimer = setTimeout(() => { toast.classList.add('translate-x-[120%]', 'opacity-0'); }, 4000);
+        };
 
         // --- FIREBASE SYNC ---
         async function loadCloudSettings() {
@@ -829,7 +888,7 @@
                     const data = d.data();
                     if(!data.shiftDateStr) return;
                     
-                    allLogsArray.push({ id: d.id, ...data }); // Push raw log
+                    allLogsArray.push({ id: d.id, ...data }); 
                     
                     if(!historyMap[data.shiftDateStr]) historyMap[data.shiftDateStr] = { date: data.shiftDateStr, totalCal: 0, items: [] };
                     
@@ -856,7 +915,7 @@
                 
                 renderDashboard();
                 renderAnalytics();
-                renderDatabaseTable(); // Trigger Database Table re-render
+                renderDatabaseTable(); 
             });
 
             // 2. Recipes Listener
@@ -892,7 +951,7 @@
                     <tr class="border-b border-white/5 transition-colors">
                         <td class="p-4 text-white">${dStr} <span class="text-zinc-500 text-[10px] ml-1">${tStr}</span></td>
                         <td class="p-4"><span class="bg-white/10 px-2 py-1 rounded-md text-[10px] uppercase font-bold tracking-widest">${typeIcon}</span></td>
-                        <td class="p-4 font-bold text-white max-w-[150px] truncate" title="${log.item}">${log.item}</td>
+                        <td class="p-4 font-bold text-white max-w-[150px] min-w-[150px] truncate" title="${log.item}">${log.item}</td>
                         <td class="p-4 text-white">${log.grams || 0}${log.type === 'Water' ? 'ml' : 'g'}</td>
                         <td class="p-4 font-bold text-indigo-300">${(log.cal || 0).toFixed(0)}</td>
                         <td class="p-4 font-bold text-blue-300">${(log.pro || 0).toFixed(1)}</td>
@@ -913,7 +972,7 @@
                 try {
                     await deleteDoc(doc(db, basePathPrefix, currentUserUid, 'logs', docId));
                     showSysToast("Deleted", "Row removed from Firebase.");
-                } catch(e) { showModal("Error", e.message); }
+                } catch(e) { window.showModal("Error", e.message); }
             }
         };
 
@@ -974,6 +1033,66 @@
             }
         }
 
+        // --- UNDO / BATCH FIREBASE LOGGING ---
+        window.triggerSubmitWithUndo = () => {
+            if(!currentUserUid || state.currentMeal.length === 0) return window.showModal("Empty Meal", "Add items before logging.");
+            
+            // Backup for Undo
+            pendingLogBackup = {
+                mealItems: [...state.currentMeal],
+                prevToday: JSON.parse(JSON.stringify(state.today))
+            };
+
+            // Calculate totals
+            let tCal = 0, tPro = 0, tFat = 0, tCarb = 0;
+            state.currentMeal.forEach(item => { tCal += item.cal; tPro += item.pro; tFat += item.fat; tCarb += item.carb; });
+
+            // Optimistic UI update
+            state.today.cal += tCal; state.today.pro += tPro; state.today.fat += tFat; state.today.carb += tCarb;
+            state.currentMeal = []; 
+            renderMealList(); 
+            renderDashboard(); 
+
+            // Show Toast & start countdown
+            const toast = document.getElementById('undo-toast');
+            toast.classList.remove('hidden'); 
+            toast.classList.add('toast-enter');
+            
+            clearTimeout(undoTimeout);
+            undoTimeout = setTimeout(commitMealLog, 5000); 
+        };
+
+        window.undoMealLog = () => {
+            clearTimeout(undoTimeout);
+            
+            // Revert state
+            state.currentMeal = [...pendingLogBackup.mealItems];
+            state.today = JSON.parse(JSON.stringify(pendingLogBackup.prevToday));
+            
+            renderMealList(); 
+            renderDashboard(); 
+            
+            document.getElementById('undo-toast').classList.add('hidden');
+            pendingLogBackup = null;
+        };
+
+        async function commitMealLog() {
+            document.getElementById('undo-toast').classList.add('hidden');
+            if(!pendingLogBackup || pendingLogBackup.mealItems.length === 0) return;
+            
+            const logsRef = collection(db, basePathPrefix, currentUserUid, 'logs');
+            for(const item of pendingLogBackup.mealItems) {
+                await addDoc(logsRef, { 
+                    type: 'Food', item: item.name, grams: item.grams, 
+                    cal: item.cal, pro: item.pro, fat: item.fat, carb: item.carb, 
+                    shiftDateStr: globalShiftDateStr, timestamp: Date.now() 
+                });
+            }
+            pendingLogBackup = null;
+            showSysToast("Firebase Logged", "Data updated in Database."); 
+            switchTab('dashboard');
+        }
+
         // --- AI API LOGIC ---
         function safeParseJSON(text) {
             try { return JSON.parse(text); } 
@@ -1000,7 +1119,7 @@
 
         async function windowGenerateSmartMacros(event) {
             const age = document.getElementById('ai-age').value; const weight = document.getElementById('ai-weight').value; const height = document.getElementById('ai-height').value; const goal = document.getElementById('ai-goal').value; const storedKey = document.getElementById('gemini-key').value;
-            if(!age || !weight || !height) return showModal("Input Required", "Fill out Age, Weight, Height.");
+            if(!age || !weight || !height) return window.showModal("Input Required", "Fill out Age, Weight, Height.");
             
             const btn = event.currentTarget; const originalText = btn.innerHTML;
             btn.innerHTML = `Calculating...`; btn.disabled = true;
@@ -1010,8 +1129,8 @@
                 const text = await callGeminiAPI([{ role: "user", parts: [{ text: prompt }] }], storedKey, true);
                 const newMacros = safeParseJSON(text);
                 document.getElementById('goal-cal').value = newMacros.cal; document.getElementById('goal-pro').value = newMacros.pro; document.getElementById('goal-fat').value = newMacros.fat; document.getElementById('goal-carb').value = newMacros.carb;
-                windowSaveSettings();
-            } catch (e) { showModal("Calculation Error", e.message); } 
+                window.saveSettings();
+            } catch (e) { window.showModal("Calculation Error", e.message); } 
             finally { btn.innerHTML = originalText; btn.disabled = false; }
         }
 
@@ -1026,7 +1145,7 @@
                 const data = safeParseJSON(text);
                 state.currentMeal.push({ id: Date.now(), name: data.name, grams: 1, cal: data.cal, pro: data.pro, fat: data.fat, carb: data.carb });
                 renderMealList(); document.getElementById('chat-calc-input').value = ''; showSysToast("Added!", `${data.name} built.`);
-            } catch (e) { showModal("Error", e.message); } 
+            } catch (e) { window.showModal("Error", e.message); } 
             finally { btn.innerHTML = `✨ Calculate Macros`; btn.disabled = false; }
         }
 
@@ -1087,7 +1206,7 @@
                 <div class="flex justify-start">
                     <div class="bg-indigo-900/40 text-indigo-100 p-4 rounded-2xl rounded-tl-sm max-w-[85%] text-sm border border-indigo-500/20">
                         ${displayReply.replace(/\n/g, '<br>')}
-                        ${payload ? `<button onclick='window.logChatMeal(${JSON.stringify(payload)})' class="mt-4 w-full bg-white text-black font-bold py-2 rounded-xl">➕ Log to Dashboard</button>` : ''}
+                        ${payload ? `<button onclick='window.logChatMeal(${JSON.stringify(payload)})' class="mt-4 w-full bg-white text-black font-bold py-2 rounded-xl">➕ Add Row to Builder</button>` : ''}
                     </div>
                 </div>`;
                 chatBox.scrollTop = chatBox.scrollHeight; clearChatImage();
@@ -1096,7 +1215,9 @@
 
         window.logChatMeal = (data) => {
             state.currentMeal.push({ id: Date.now(), name: data.name, grams: 1, cal: data.cal, pro: data.pro, fat: data.fat, carb: data.carb });
-            commitMealLog(); showSysToast("Logged", `${data.name} synced directly.`);
+            showSysToast("Added!", `${data.name} added to builder.`);
+            switchTab('log');
+            renderMealList();
         }
 
         // --- GENERAL LOGIC ---
@@ -1105,20 +1226,10 @@
             setTimeout(() => document.getElementById(`tab-${targetId}`).classList.add('active-tab'), 50);
             document.querySelectorAll('.nav-btn').forEach(btn => {
                 btn.classList.remove('active'); if(btn.dataset.target === targetId) btn.classList.add('active');
-                if(btn.dataset.target === 'database') b.classList.toggle('text-emerald-400', b.dataset.target !== targetId); 
+                if(btn.dataset.target === 'database') btn.classList.toggle('text-emerald-400', btn.dataset.target !== targetId); 
             });
             const tabTitles = { 'dashboard': 'Dashboard', 'log': 'Log Meal', 'coach': 'AI Coach', 'analytics': 'Statistics', 'database': 'Database Monitor', 'settings': 'Configuration' };
             document.getElementById('page-title').innerText = tabTitles[targetId];
-        }
-
-        async function commitMealLog() {
-            if(!currentUserUid || state.currentMeal.length === 0) return showModal("Empty Meal", "Add items first.");
-            const logsRef = collection(db, basePathPrefix, currentUserUid, 'logs');
-            for(const item of state.currentMeal) {
-                await addDoc(logsRef, { type: 'Food', item: item.name, grams: item.grams, cal: item.cal, pro: item.pro, fat: item.fat, carb: item.carb, shiftDateStr: globalShiftDateStr, timestamp: Date.now() });
-            }
-            state.currentMeal = []; renderMealList();
-            showSysToast("Firebase Logged", "Data updated in Database."); switchTab('dashboard');
         }
 
         async function windowLogWater() {
@@ -1131,7 +1242,7 @@
         async function windowLogMetrics() {
             if(!currentUserUid) return;
             const weight = parseFloat(document.getElementById('metric-weight').value) || 0; const bf = parseFloat(document.getElementById('metric-bf').value) || 0;
-            if (!weight && !bf) return showModal("Missing Info", "Enter weight/BF.");
+            if (!weight && !bf) return window.showModal("Missing Info", "Enter weight/BF.");
             await addDoc(collection(db, basePathPrefix, currentUserUid, 'metrics'), { weight: weight, bodyFat: bf, shiftDateStr: globalShiftDateStr, timestamp: Date.now() });
             document.getElementById('metric-weight').value = ''; document.getElementById('metric-bf').value = ''; showSysToast("Metrics Saved", "Logged to Firebase.");
         }
@@ -1177,7 +1288,7 @@
         }
 
         async function forceAISearch() {
-            const query = document.getElementById('food-search').value; if(!query) return showModal("Empty", "Type food name.");
+            const query = document.getElementById('food-search').value; if(!query) return window.showModal("Empty", "Type food name.");
             const storedKey = document.getElementById('gemini-key').value;
             document.getElementById('search-dropdown').classList.remove('hidden'); document.getElementById('search-dropdown').innerHTML = `<div class="p-5 text-sm text-indigo-400 text-center animate-pulse">AI Estimating...</div>`;
             try {
@@ -1214,12 +1325,48 @@
                 try {
                     const text = await callGeminiAPI([{ role: "user", parts: [{ text: `Calculate exact macros for ${grams}g of "${name}". JSON ONLY: {"cal":100,"pro":20,"fat":5,"carb":10}` }] }], document.getElementById('gemini-key').value, true);
                     const d = safeParseJSON(text); cal=d.cal||0; pro=d.pro||0; fat=d.fat||0; carb=d.carb||0;
-                } catch(e) { return showModal("AI Error", e.message); }
+                } catch(e) { return window.showModal("AI Error", e.message); }
             }
             state.currentMeal.push({ id: Date.now(), name, grams, cal, pro, fat, carb }); renderMealList();
             document.getElementById('stage-name').value = ''; document.getElementById('stage-grams').value = '100';
             if(isOffline) { ['stage-cal', 'stage-pro', 'stage-fat', 'stage-carb'].forEach(id => document.getElementById(id).value = '0'); }
         };
+
+        function renderMealList() {
+            const list = document.getElementById('meal-list');
+            list.innerHTML = '';
+            let tCal = 0, tPro = 0, tFat = 0, tCarb = 0;
+
+            if(state.currentMeal.length === 0) {
+                list.innerHTML = "Empty. Add foods from the left panel.";
+                document.getElementById('meal-total-display').innerText = `0 kcal`;
+                document.getElementById('meal-p-display').innerText = `0g`;
+                document.getElementById('meal-f-display').innerText = `0g`;
+                document.getElementById('meal-c-display').innerText = `0g`;
+                return;
+            }
+
+            state.currentMeal.forEach(item => {
+                tCal += item.cal; tPro += item.pro; tFat += item.fat; tCarb += item.carb;
+                list.innerHTML += `
+                    <div class="flex justify-between items-center bg-black/40 p-4 rounded-xl border border-white/5">
+                        <div class="text-left w-3/5 truncate pr-2">
+                            <p class="text-base font-bold text-white font-brand truncate">${item.name}</p>
+                            <p class="text-[11px] font-bold uppercase tracking-widest text-indigo-300">${item.grams}g</p>
+                        </div>
+                        <div class="flex items-center gap-4 shrink-0">
+                            <div class="text-sm text-zinc-300 font-bold font-brand">${item.cal.toFixed(0)} kcal</div>
+                            <button onclick="window.removeMealItem(${item.id})" class="text-zinc-500 hover:text-red-400 p-2">✕</button>
+                        </div>
+                    </div>`;
+            });
+
+            document.getElementById('meal-total-display').innerText = `${tCal.toFixed(0)} kcal`;
+            document.getElementById('meal-p-display').innerText = `${tPro.toFixed(1)}g`;
+            document.getElementById('meal-f-display').innerText = `${tFat.toFixed(1)}g`;
+            document.getElementById('meal-c-display').innerText = `${tCarb.toFixed(1)}g`;
+            list.scrollTop = list.scrollHeight;
+        }
 
         window.removeMealItem = (id) => { state.currentMeal = state.currentMeal.filter(i => i.id !== id); renderMealList(); };
         
@@ -1233,7 +1380,7 @@
         window.clearBaseFood = () => { selectedBaseFood = null; }; window.forceAISearch = forceAISearch;
         window.generateSmartMacros = windowGenerateSmartMacros; window.processChatCalculation = windowProcessChatCalculation;
         window.handleChatImageSelection = handleChatImageSelection; window.clearChatImage = clearChatImage; window.sendChatMessage = sendChatMessage;
-        window.commitMealLog = commitMealLog; window.logWater = windowLogWater; window.logMetrics = windowLogMetrics; window.saveSettings = windowSaveSettings;
+        window.logWater = windowLogWater; window.logMetrics = windowLogMetrics; window.saveSettings = windowSaveSettings;
         window.openRecipeModal = () => { document.getElementById('recipe-prompt-modal').classList.remove('hidden'); document.getElementById('recipe-prompt-modal').classList.add('flex'); };
         window.closeRecipeModal = () => { document.getElementById('recipe-prompt-modal').classList.add('hidden'); document.getElementById('recipe-prompt-modal').classList.remove('flex'); };
         window.confirmSaveRecipe = async () => {
